@@ -16,16 +16,19 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-s", "--search", help="keyword to search for")
 parser.add_argument("-i", "--install", help="URL of the ROM to install")
 parser.add_argument("-p", "--platform", default='all', help="valid platforms: %s" % ' '.join(x for x in database.keys()))
+parser.add_argument("-f", "--force", action="store_true", help="skip URL validation")
 args = parser.parse_args()
 
 
 def url_is_valid(x):
     """ checks if the url is in the database """
-    for _, game_list in database.items():
-        for _, url in game_list.items():
-            if url == x:
-                return True
-    return False
+    if not args.force:
+        for _, game_list in database.items():
+            for _, url in game_list.items():
+                if url == x:
+                    return True
+        return False
+    return True
 
 
 def search():
