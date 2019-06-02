@@ -34,15 +34,17 @@ def search():
         parser.error("platform not supported")
         raise SystemExit
 
+    keywords = args.search.lower().split(' ')
+
     if args.platform in database:
         for title, url in database.get(args.platform).items():
-            if args.search.lower() in title.lower():
+            if all([key in title.lower() for key in keywords]):
                 print("%s\n%s\n" % (title, url))
 
     elif args.platform == 'all':
         for platform, game_list in database.items():
             for title, url in game_list.items():
-                if args.search.lower() in title.lower():
+                if all([key in title.lower() for key in keywords]):
                     print("(%s) %s\n%s\n" % (platform, title, url))
 
 
