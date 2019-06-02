@@ -6,13 +6,6 @@ import requests
 import urllib
 
 
-def url_is_valid(x):
-    """ checks if the url is in the database """
-    if not args.force:
-        return x in database
-    return True
-
-
 def search():
     """ searches database for specified title """
     keywords = args.search.lower().split(' ')
@@ -23,7 +16,7 @@ def search():
 
 def download():
     """ downloads specified url """
-    if not url_is_valid(args.install):
+    if args.install not in database:
         parser.error("url is not valid")
         raise SystemExit
 
