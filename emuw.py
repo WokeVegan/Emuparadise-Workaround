@@ -6,20 +6,6 @@ import argparse
 import time
 import requests
 import urllib
-import sys
-
-download_path = os.path.join(os.path.expanduser("~"))
-database_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database', 'emuparadise.json')
-database = json.load(open(database_path, 'r'))
-
-parser = argparse.ArgumentParser()
-parser.add_argument("-s", "--search", type=str, help="keywords to search for")
-parser.add_argument("-i", "--install", type=str, help="URL of the ROM to install")
-parser.add_argument("-p", "--platform", type=str, default="all",
-                    help="platforms: %s" % " ".join(x for x in database.keys()))
-parser.add_argument("-c", "--chunk", type=int, default=1024*1024, help="read/write chunk size")
-parser.add_argument("-f", "--force", action="store_true", help="skip URL validation check")
-args = parser.parse_args()
 
 
 def url_is_valid(x):
@@ -78,13 +64,24 @@ def download():
                 progress += len(block)
                 done = int(30 * progress / total_length)
                 percent = '{0:.2f}%'.format((progress / total_length * 100))
-                sys.stdout.write("\r%s [%s%s] %.2fMB/%.2fMB %.2fs" % (percent, '=' * done, ' ' * (30 - done), progress / 1000000, total_length / 1000000, time.time() - start))
-                sys.stdout.flush()
+                print("\r%s [%s%s] %.2fMB/%.2fMB %.2fs" % (percent, '=' * done, ' ' * (30 - done), progress / 1000000, total_length / 1000000, time.time() - start), end="")
             f.close()
         print("\nfile saved to '%s'" % filename)
 
 
 if __name__ == '__main__':
+    download_path = os.path.join(os.path.expanduser("~"))
+    database_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database', 'emuparadise.json')
+    database = json.load(open(database_path, 'r'))
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-s", "--search", type=str, help="keywords to search for")
+    parser.add_argument("-i", "--install", type=str, help="URL of the ROM to install")
+    parser.add_argument("-p", "--platform", type=str, default="all", help="platforms: %s" % " ".join(x for x in database.keys()))
+    parser.add_argument("-c", "--chunk", type=int, default=1024 * 1024, help="read/write chunk size")
+    parser.add_argument("-f", "--force", action="store_true", help="skip URL validation check")
+    args = parser.parse_args()
+
     if args.search and not args.install:
         search()
     elif args.install and not args.search:
