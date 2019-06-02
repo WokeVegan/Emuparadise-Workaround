@@ -8,6 +8,16 @@ import urllib
 
 def search():
     """ searches database for specified title """
+    relative_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database', 'emuparadise.txt')
+    xdg_path = os.path.join(os.path.expanduser("~"), ".local", "share", "emuw", "database", "emuparadise.txt")
+
+    if os.name == "nt" or not os.path.exists(xdg_path):
+        database_path = relative_path
+    else:
+        database_path = xdg_path
+
+    database = [x.strip('\n') for x in open(database_path, 'r').readlines()]
+
     keywords = args.search.lower().split(' ')
     matches = [x for x in database if all([key.lower() in x.lower() for key in keywords])]
     for x in matches:
@@ -16,15 +26,11 @@ def search():
 
 def download():
     """ downloads specified url """
-    if args.install not in database:
-        parser.error("url is not valid")
-        raise SystemExit
-
-    gid = args.install.split('/')[-1]
+    gid = args.download.split('/')[-1]
     game_link = "https://www.emuparadise.me/roms/get-download.php?gid=%s&test=true" % gid
     response = requests.get(game_link, headers={"referer": game_link}, stream=True)
     decoded_url = urllib.parse.unquote(response.url)
-    filename = os.path.join(download_path, decoded_url.split('/')[-1])
+    filename = decoded_url.split('/')[-1]
 
     if os.path.exists(filename):
         print("%s already exists" % filename)
@@ -34,7 +40,7 @@ def download():
         current_size = 0
 
         with open(filename, 'wb') as f:
-            for block in response.iter_content(args.chunk):
+            for block in response.iter_content(2097152):
                 f.write(block)
                 current_size += len(block)
                 percent = '{0:3d}%'.format(int(current_size / total_size * 100))
@@ -44,18 +50,12 @@ def download():
 
 
 if __name__ == '__main__':
-    download_path = os.path.join(os.path.expanduser("~"))
-    database_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database', 'emuparadise.txt')
-    database = [x.strip('\n') for x in open(database_path, 'r').readlines()]
-
     parser = argparse.ArgumentParser()
-    parser.add_argument("-s", "--search", type=str, help="keywords to search for")
-    parser.add_argument("-i", "--install", type=str, help="URL of the ROM to install")
-    parser.add_argument("-c", "--chunk", type=int, default=2097152, help="read/write chunk size")
-    parser.add_argument("-f", "--force", action="store_true", help="skip URL validation check")
+    parser.add_argument("-s", "--search", type=str, help="keywords to search")
+    parser.add_argument("-d", "--download", type=str, help="link to download")
     args = parser.parse_args()
 
-    if args.search and not args.install:
+    if args.search and not args.download:
         search()
-    elif args.install and not args.search:
+    elif args.download and not args.search:
         download()
