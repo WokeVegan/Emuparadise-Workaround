@@ -13,10 +13,12 @@ database_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'databa
 database = json.load(open(database_path, 'r'))
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-s", "--search", help="keyword to search for")
-parser.add_argument("-i", "--install", help="URL of the ROM to install")
-parser.add_argument("-p", "--platform", default='all', help="valid platforms: %s" % ' '.join(x for x in database.keys()))
-parser.add_argument("-f", "--force", action="store_true", help="skip URL validation")
+parser.add_argument("-s", "--search", type=str, help="keywords to search for")
+parser.add_argument("-i", "--install", type=str, help="URL of the ROM to install")
+parser.add_argument("-p", "--platform", type=str, default="all",
+                    help="platforms: %s" % " ".join(x for x in database.keys()))
+parser.add_argument("-c", "--chunk", type=int, default=1024*1024, help="read/write chunk size")
+parser.add_argument("-f", "--force", action="store_true", help="skip URL validation check")
 args = parser.parse_args()
 
 
@@ -58,30 +60,28 @@ def download():
         raise SystemExit
 
     start = time.time()
-    gid = args.install.split('/')[-1]
-    game_link = "https://www.emuparadise.me/roms/get-download.php?gid=%s&test=true" % gid
+    game_link = "https://www.emuparadise.me/roms/get-download.php?gid=%s&test=true" % args.install.split('/')[-1]
     response = requests.get(game_link, headers={"referer": game_link}, stream=True)
     decoded_url = urllib.parse.unquote(response.url)
-    filename = decoded_url.split('/')[-1]
+    filename = os.path.join(download_path, decoded_url.split('/')[-1])
 
-    with open(os.path.join(download_path, filename), 'wb') as f:
-        total_length = response.headers.get('content-length')
-        print("downloading", "(%s)" % filename)
+    if os.path.exists(filename):
+        print("%s already exists" % filename)
+
+    elif not os.path.exists(filename):
+        total_length = int(response.headers.get('content-length'))
         progress = 0
-        total_length = int(total_length)
 
-        for block in response.iter_content(10**6):
-            f.write(block)
-            progress += len(block)
-            done = int(50 * progress / total_length)
-            percent = '{0:.2f}%'.format((progress / total_length * 100))
-            sys.stdout.write("\r%s [%s%s] %.2fMB/%.2fMB" % (
-                percent, '=' * done, ' ' * (50 - done), progress / 1000000, total_length / 1000000))
-            sys.stdout.flush()
-        end = time.time() - start
-        f.close()
-
-    print("\ndownload completed in %.2fs\n" % end)
+        with open(filename, 'wb') as f:
+            for block in response.iter_content(args.chunk):
+                f.write(block)
+                progress += len(block)
+                done = int(30 * progress / total_length)
+                percent = '{0:.2f}%'.format((progress / total_length * 100))
+                sys.stdout.write("\r%s [%s%s] %.2fMB/%.2fMB %.2fs" % (percent, '=' * done, ' ' * (30 - done), progress / 1000000, total_length / 1000000, time.time() - start))
+                sys.stdout.flush()
+            f.close()
+        print("\nfile saved to '%s'" % filename)
 
 
 if __name__ == '__main__':
@@ -89,5 +89,3 @@ if __name__ == '__main__':
         search()
     elif args.install and not args.search:
         download()
-    else:
-        parser.print_help()
