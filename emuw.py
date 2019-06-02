@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-import json
 import argparse
 import requests
 import urllib
@@ -10,32 +9,16 @@ import urllib
 def url_is_valid(x):
     """ checks if the url is in the database """
     if not args.force:
-        for _, game_list in database.items():
-            for _, url in game_list.items():
-                if url == x:
-                    return True
-        return False
+        return x in database
     return True
 
 
 def search():
     """ searches database for specified title """
-    if args.platform not in database and args.platform is not 'all':
-        parser.error("platform not supported")
-        raise SystemExit
-
     keywords = args.search.lower().split(' ')
-
-    if args.platform in database:
-        for title, url in database.get(args.platform).items():
-            if all([key in title.lower() for key in keywords]):
-                print("%s\n%s\n" % (title, url))
-
-    elif args.platform == 'all':
-        for platform, game_list in database.items():
-            for title, url in game_list.items():
-                if all([key in title.lower() for key in keywords]):
-                    print("(%s) %s\n%s\n" % (platform, title, url))
+    matches = [x for x in database if all([key.lower() in x.lower() for key in keywords])]
+    for x in matches:
+        print(x)
 
 
 def download():
@@ -44,7 +27,8 @@ def download():
         parser.error("url is not valid")
         raise SystemExit
 
-    game_link = "https://www.emuparadise.me/roms/get-download.php?gid=%s&test=true" % args.install.split('/')[-1]
+    gid = args.install.split('/')[-1]
+    game_link = "https://www.emuparadise.me/roms/get-download.php?gid=%s&test=true" % gid
     response = requests.get(game_link, headers={"referer": game_link}, stream=True)
     decoded_url = urllib.parse.unquote(response.url)
     filename = os.path.join(download_path, decoded_url.split('/')[-1])
@@ -68,13 +52,12 @@ def download():
 
 if __name__ == '__main__':
     download_path = os.path.join(os.path.expanduser("~"))
-    database_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database', 'emuparadise.json')
-    database = json.load(open(database_path, 'r'))
+    database_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database', 'emuparadise.txt')
+    database = [x.strip('\n') for x in open(database_path, 'r').readlines()]
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-s", "--search", type=str, help="keywords to search for")
     parser.add_argument("-i", "--install", type=str, help="URL of the ROM to install")
-    parser.add_argument("-p", "--platform", type=str, default="all", help="platforms: %s" % " ".join(x for x in database.keys()))
     parser.add_argument("-c", "--chunk", type=int, default=2097152, help="read/write chunk size")
     parser.add_argument("-f", "--force", action="store_true", help="skip URL validation check")
     args = parser.parse_args()
