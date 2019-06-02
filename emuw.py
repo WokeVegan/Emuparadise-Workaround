@@ -3,7 +3,6 @@
 import os
 import json
 import argparse
-import time
 import requests
 import urllib
 
@@ -45,7 +44,6 @@ def download():
         parser.error("url is not valid")
         raise SystemExit
 
-    start = time.time()
     game_link = "https://www.emuparadise.me/roms/get-download.php?gid=%s&test=true" % args.install.split('/')[-1]
     response = requests.get(game_link, headers={"referer": game_link}, stream=True)
     decoded_url = urllib.parse.unquote(response.url)
@@ -55,16 +53,15 @@ def download():
         print("%s already exists" % filename)
 
     elif not os.path.exists(filename):
-        total_length = int(response.headers.get('content-length'))
-        progress = 0
+        total_size = int(response.headers.get('content-length'))
+        current_size = 0
 
         with open(filename, 'wb') as f:
             for block in response.iter_content(args.chunk):
                 f.write(block)
-                progress += len(block)
-                done = int(30 * progress / total_length)
-                percent = '{0:.2f}%'.format((progress / total_length * 100))
-                print("\r%s [%s%s] %.2fMB/%.2fMB %.2fs" % (percent, '=' * done, ' ' * (30 - done), progress / 1000000, total_length / 1000000, time.time() - start), end="")
+                current_size += len(block)
+                percent = '{0:3d}%'.format(int(current_size / total_size * 100))
+                print("\r%.2fMB / %.2fMB\t%s" % (current_size >> 20, total_size >> 20, percent), end="")
             f.close()
         print("\nfile saved to '%s'" % filename)
 
@@ -78,7 +75,7 @@ if __name__ == '__main__':
     parser.add_argument("-s", "--search", type=str, help="keywords to search for")
     parser.add_argument("-i", "--install", type=str, help="URL of the ROM to install")
     parser.add_argument("-p", "--platform", type=str, default="all", help="platforms: %s" % " ".join(x for x in database.keys()))
-    parser.add_argument("-c", "--chunk", type=int, default=1024 * 1024, help="read/write chunk size")
+    parser.add_argument("-c", "--chunk", type=int, default=2097152, help="read/write chunk size")
     parser.add_argument("-f", "--force", action="store_true", help="skip URL validation check")
     args = parser.parse_args()
 
