@@ -8,8 +8,8 @@ import urllib.parse
 
 def search():
     """ searches database for specified title """
-    relative_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database', 'emuparadise.txt')
-    xdg_path = os.path.join(os.path.expanduser("~"), ".local", "share", "emuw", "database", "emuparadise.txt")
+    relative_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "database.txt")
+    xdg_path = os.path.join(os.path.expanduser("~"), ".local", "share", "emu-dl", "database.txt")
 
     if os.name == "nt" or not os.path.exists(xdg_path):
         database_path = relative_path
@@ -43,7 +43,7 @@ def download():
                 f.write(block)
                 current_size += len(block)
                 percent = '{0:3d}%'.format(int(current_size / total_size * 100))
-                print("\r%.2fMB / %.2fMB\t%s" % (current_size >> 20, total_size >> 20, percent), end="")
+                print("\r%3dMB / %3dMB\t%s" % (current_size >> 20, total_size >> 20, percent), end="")
             f.close()
         print("\nfile saved to '%s'" % filename)
 
