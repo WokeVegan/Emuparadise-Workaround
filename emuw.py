@@ -34,7 +34,6 @@ def download():
 
     if os.path.exists(filename):
         print("%s already exists" % filename)
-
     elif not os.path.exists(filename):
         total_size = int(response.headers.get('content-length'))
         current_size = 0
