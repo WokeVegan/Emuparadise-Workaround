@@ -7,6 +7,4 @@ command-line tool to search/download roms from emuparadise using python
 
 # requirements
 - python2 or python3
-  - argparse
   - requests
-  - urllib
