@@ -4,12 +4,15 @@ Emuparadise Workaround
 Emuparadise Workaround is a command-line tool that allows you to search and download roms from emuparadise.
 
 Requirements
--------
+------------
 * Python version 3.x: https://www.python.org
     * argparse
+
+Installing argparse
+-------------------
 .. code-block:: text
 
-    pip install argparse
+    $ pip install argparse
 
 Example
 -------
@@ -29,6 +32,4 @@ Example
     $ python emuw.py -d "https://github.com/WokeVegan/emu_workaround/blob/master/README.rst"
     120.00MB / 120.00MB    100%
     file saved to 'README.rst'
-    $ python emuw.py -d "https://github.com/WokeVegan/emu_workaround/blob/master/README.rst"
-    'README.rst' already exists
 
