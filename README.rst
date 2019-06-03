@@ -36,6 +36,6 @@ Example
 
 .. code-block:: text
 
-    $ python emu-dl -d "https://emuparadise.me//Nintendo_Gamecube_ISOs/Shrek_SuperSlam/66350"
+    $ python emu-dl.py -d "https://emuparadise.me//Nintendo_Gamecube_ISOs/Shrek_SuperSlam/66350"
     1267.00MB / 1267.00MB    100%
     file saved to 'Shrek SuperSlam (USA).7z'
