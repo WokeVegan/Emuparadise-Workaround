@@ -6,7 +6,6 @@ emu_workaround is a command-line tool written in python3 that allows you to sear
 Example
 -------
 
-searching...
 .. code-block:: text
 
     $ python emuw.py -s "emu_workaround"
@@ -14,7 +13,6 @@ searching...
     https://github.com/WokeVegan/emu_workaround
     https://github.com/WokeVegan/emu_workaround
 
-downloading
 .. code-block:: text
 
     $ python emuw.py -d "https://github.com/WokeVegan/emu_workaround"
