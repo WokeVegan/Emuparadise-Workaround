@@ -3,7 +3,7 @@
 import os
 import argparse
 import requests
-import urllib
+import urllib.parse
 
 
 def search():
