@@ -1,7 +1,7 @@
-Emuparadise Workaround
+emu-dl
 ====
 
-Emuparadise Workaround is a command-line tool that allows you to search and download roms from emuparadise.
+emu-dl is a command-line tool that allows you to search and download roms from emuparadise.
 
 Requirements
 ------------
@@ -20,7 +20,7 @@ Example
 
 .. code-block:: text
 
-    $ python emuw.py -s "shrek super slam"
+    $ python emu-dl.py -s "shrek super slam"
     https://emuparadise.me//Nintendo_Gamecube_ISOs/DreamWorks_Shrek_-_SuperSlam_(Europe)/181769
     https://emuparadise.me//Nintendo_Gamecube_ISOs/DreamWorks_Shrek_-_SuperSlam_(Europe)_(En,Fr,Es,It)/181770
     https://emuparadise.me//Nintendo_Gamecube_ISOs/DreamWorks_Shrek_-_SuperSlam_(Germany)/181771
@@ -36,6 +36,6 @@ Example
 
 .. code-block:: text
 
-    $ python emuw -d "https://emuparadise.me//Nintendo_Gamecube_ISOs/Shrek_SuperSlam/66350"
+    $ python emu-dl -d "https://emuparadise.me//Nintendo_Gamecube_ISOs/Shrek_SuperSlam/66350"
     1267.00MB / 1267.00MB    100%
     file saved to 'Shrek SuperSlam (USA).7z'
