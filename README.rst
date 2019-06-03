@@ -6,13 +6,13 @@ Emuparadise Workaround is a command-line tool that allows you to search and down
 Requirements
 ------------
 * Python version 3.x: https://www.python.org
-    * argparse
+    * requests
 
-Installing argparse
+Installing requests
 -------------------
 .. code-block:: text
 
-    $ pip install argparse
+    $ pip install requests
 
 Example
 -------
