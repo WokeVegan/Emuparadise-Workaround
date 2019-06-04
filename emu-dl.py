@@ -9,7 +9,7 @@ import time
 
 def search():
     """ searches database for specified title """
-    relative_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "database.txt")
+    relative_path = os.path.join(os.path.abspath(__file__), "database.txt")
     xdg_path = os.path.join(os.path.expanduser("~"), ".local", "share", "emu-dl", "database.txt")
 
     if os.name == "nt" or not os.path.exists(xdg_path):
@@ -31,7 +31,7 @@ def get_size_label(total):
     if total >= 1000000:
         return "%.2fMB" % (int(total) / 1000000)
     elif total >= 1000:
-        return "%.2fdKB" % (int(total) / 1000)
+        return "%.2fKB" % (int(total) / 1000)
     return "%dB" % total
 
 
