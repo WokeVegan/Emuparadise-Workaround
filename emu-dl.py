@@ -18,7 +18,7 @@ def search():
 
     database = [x.strip('\n') for x in open(database_path, encoding='utf-8').readlines()]
     keywords = args.search.lower().split(' ')
-    matches = [x for x in database if all([key.lower() in x.lower() for key in keywords])]
+    matches = sorted([x for x in database if all([key.lower() in x.lower() for key in keywords])])
 
     for x in matches:
         print(x)
