@@ -153,8 +153,7 @@ if __name__ == '__main__':
 
     try:
         if batch_download:
-            if args.directory:
-                download_batch(search(args.batch))
+            download_batch(search(args.batch))
         else:
             if args.directory:
                 download(args.url, args.directory)
