@@ -7,18 +7,36 @@ import urllib.parse
 import time
 
 
+def strict_search(keywords, database):
+    matches = []
+    for x in database:
+        if all([key.lower() in x.lower() for key in keywords]):
+            x_keys = x.lower().split('/')[-2].replace('_', ' ').split(' ')
+            if '-' in x_keys:
+                x_keys.remove('-')
+            try:
+                first_index = x_keys.index(keywords[0])
+                if all([key.lower() == x_keys[first_index+index].lower() for index, key in enumerate(keywords)]):
+                    matches.append(x)
+            except ValueError:
+                pass
+
+    return matches
+
+
 def search(keywords):
     """ searches database for keywords """
-
-    relative_path = os.path.join(os.path.abspath(__file__), "database.txt")
-    xdg_path = os.path.join(os.path.expanduser("~"), ".local", "share", "emu-dl", "database.txt")
-    database_path = xdg_path
-
-    if os.name == "nt" or not os.path.exists(xdg_path):
-        database_path = relative_path
-
+    database_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "database.txt")
     database = [x.strip('\n') for x in open(database_path, encoding='utf-8').readlines()]
-    matches = sorted([x for x in database if all([key.lower() in x.lower() for key in keywords])])
+
+    try:
+        if args.strict:
+            matches = strict_search(keywords, database)
+        else:
+            matches = sorted([x for x in database if all([key.lower() in x.lower() for key in keywords])])
+    except AttributeError:  # if batch downloading
+        matches = sorted([x for x in database if all([key.lower() in x.lower() for key in keywords])])
+
     return matches
 
 
@@ -30,7 +48,33 @@ def get_size_label(size):
             try:
                 return value.format(size / key)
             except ZeroDivisionError:
-                return value % size
+                return value.format(size)
+
+
+def download_batch(urls):
+    if len(urls) > 0:
+        index = 1
+        total_size = 0
+        for url in urls:
+            print('\rGathering data... %03d' % int((index / len(urls)) * 100), end='')
+            gid = url.split('/')[-1]
+            game_link = "https://www.emuparadise.me/roms/get-download.php?gid=%s&test=true" % gid
+            total_size += int(requests.get(game_link, headers={'referer': game_link}, stream=True).headers['Content-length'])
+            index += 1
+
+        answer = input("\nAre you sure you want to download all %d titles? [%s] [y/n] " % (len(urls), get_size_label(total_size)))
+        if answer.lower() == 'y':
+            for url in urls:
+
+                try:
+                    if args.directory:
+                        download(url, args.directory)
+                    else:
+                        download(url)
+                except TypeError:
+                    print("Error downloading '%s'" % url)
+    else:
+        print("No results for keywords '%s'" % ' '.join(args.batch))
 
 
 def download(url, directory=os.getcwd()):
@@ -49,6 +93,7 @@ def download(url, directory=os.getcwd()):
         if overwrite.lower() != 'y':
             install = False
     if not os.path.isdir(directory):
+        print(directory)
         create_dir = input("'%s' doesnt exists yet.\nCreate the directory? [y/n] " % directory)
         if create_dir.lower() == 'y':
             os.mkdir(directory)
@@ -84,9 +129,10 @@ def download(url, directory=os.getcwd()):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     sub_parsers = parser.add_subparsers()
-    search_parser = sub_parsers.add_parser('search')
+    search_parser = sub_parsers.add_parser('search', help='search for game')
     search_parser.add_argument('-k', '--keywords', nargs='+', help='keywords to search', required=True)
-    download_parser = sub_parsers.add_parser('download')
+    search_parser.add_argument('-s', '--strict', action='store_true', help='uses strict search')
+    download_parser = sub_parsers.add_parser('download', help='download url or batch download titles')
     download_parser.add_argument('-u', '--url', help='url of rom')
     download_parser.add_argument('-b', '--batch', nargs='+', help='batch download all match results.')
     download_parser.add_argument('-d', '--directory', help='directory rom will be saved in')
@@ -107,21 +153,8 @@ if __name__ == '__main__':
 
     try:
         if batch_download:
-            urls = search(args.batch)
-            if len(urls) > 0:
-                answer = input("Are you sure you want to download all %d titles? [y/n] " % len(urls))
-                if answer.lower() == 'y':
-                    for url in urls:
-                        try:
-                            if args.directory:
-                                download(url, args.directory)
-                            else:
-                                download(url)
-                        except TypeError:
-                            print("Error downloading '%s'" % url)
-            else:
-                print("No results for keywords '%s'" % ' '.join(args.batch))
-
+            if args.directory:
+                download_batch(search(args.batch))
         else:
             if args.directory:
                 download(args.url, args.directory)
