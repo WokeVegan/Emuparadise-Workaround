@@ -50,7 +50,7 @@ A list of games and their [game id's] will be listed while searching.
 
 .. code-block:: text
 
-    $ python emu-dl.py search --k shrek super slam
+    $ python emu-dl.py search -k shrek super slam
     
     10 results found...
 
