@@ -37,7 +37,7 @@ Commands
 
     **Optional Arguments**
 
-    --platform      Shows the platform next to each ROM.
+    -p, --platform  Shows the platform next to each ROM.
 
     .. code-block:: text
 

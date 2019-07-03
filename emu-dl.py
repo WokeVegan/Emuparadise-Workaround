@@ -132,7 +132,7 @@ if __name__ == '__main__':
     sub_parsers = parser.add_subparsers()
     search_parser = sub_parsers.add_parser('search')
     search_parser.add_argument('-k', '--keywords', nargs='+', help='Keywords to search for.', required=True)
-    search_parser.add_argument('--platform', action='store_true', help='Shows the platform next to each ROM.')
+    search_parser.add_argument('-p', '--platform', action='store_true', help='Shows the platform next to each ROM.')
     download_parser = sub_parsers.add_parser('download')
     download_parser.add_argument('-i', '--id', help='ID of the rom you wish to download.')
     download_parser.add_argument('-d', '--directory', help='Directory the rom will be saved in. This overrides the default rom directory.')
