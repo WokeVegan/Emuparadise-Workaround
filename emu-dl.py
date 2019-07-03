@@ -6,38 +6,61 @@ import requests
 import urllib.parse
 import time
 
+DOWNLOAD_RATE_SIZE = len("xxx.xx xx/s")
+DOWNLOAD_SIZE = len("xxx.xx xx")
+ETA_SIZE = len("ETA 00:00:00")
+TIME_SIZE = len('00:00:00')
 
-def strict_search(keywords, database):
+
+def get_progress_bar(current_download, total_download):
+    """ returns progress bar"""
+    actual_percentage_width = 4  # ex. 100%
+    total_spaces = 6
+    terminal_width = os.get_terminal_size()[0]
+    progress_bar_width = terminal_width - (actual_percentage_width + total_spaces +
+                                           DOWNLOAD_RATE_SIZE + ETA_SIZE + DOWNLOAD_SIZE + TIME_SIZE)
+    percentage = int(current_download / total_download * progress_bar_width)
+    return f"[{'=' * percentage}{' ' * (progress_bar_width - percentage)}]"
+
+
+def strict_search(database, keywords):
+    """ iterates over database returning all matching keyword sequences. """
     matches = []
     for x in database:
-        if all([key.lower() in x.lower() for key in keywords]):
-            x_keys = x.lower().split('/')[-2].replace('_', ' ').split(' ')
-            if '-' in x_keys:
-                x_keys.remove('-')
-            try:
-                first_index = x_keys.index(keywords[0])
-                if all([key.lower() == x_keys[first_index+index].lower() for index, key in enumerate(keywords)]):
-                    matches.append(x)
-            except ValueError:
-                pass
+        try:
+            if all([key.lower() in x.lower() for key in keywords]):
+                x_keys = x.lower().split('/')[-2].replace('_', ' ').split(' ')
+                if '-' in x_keys:
+                    x_keys.remove('-')
+                try:
+                    first_index = x_keys.index(keywords[0])
+                    if all([key.lower() == x_keys[first_index + index].lower() for index, key in enumerate(keywords)]):
+                        matches.append(x)
+                except ValueError:
+                    pass
+        except IndexError:
+            pass
 
     return matches
 
 
-def search(keywords):
+def search():
     """ searches database for keywords """
     database_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "database.txt")
     database = [x.strip('\n') for x in open(database_path, encoding='utf-8').readlines()]
 
-    try:
-        if args.strict:
-            matches = strict_search(keywords, database)
-        else:
-            matches = sorted([x for x in database if all([key.lower() in x.lower() for key in keywords])])
-    except AttributeError:  # if batch downloading
-        matches = sorted([x for x in database if all([key.lower() in x.lower() for key in keywords])])
+    if args.strict:
+        matches = strict_search(database, args.keywords)
+    else:
+        matches = sorted([x for x in database if all([key.lower() in x.lower() for key in args.keywords])], )
 
-    return matches
+    print(f"\n{len(matches)} results found...\n")
+    for game in matches:
+        platform, title, gid = game.split('/')
+        if args.platform:
+            print(f"[\033[32m{gid}\033[37m][{platform}] {title}")
+        else:
+            print(f"[\033[32m{gid}\033[37m] {title}")
 
 
 def get_size_label(size):
@@ -51,36 +74,28 @@ def get_size_label(size):
                 return value.format(size)
 
 
-def download_batch(urls):
-    if len(urls) > 0:
-        index = 1
-        total_size = 0
-        for url in urls:
-            print('\rGathering data... %03d' % int((index / len(urls)) * 100), end='')
-            gid = url.split('/')[-1]
-            game_link = "https://www.emuparadise.me/roms/get-download.php?gid=%s&test=true" % gid
-            total_size += int(requests.get(game_link, headers={'referer': game_link}, stream=True).headers['Content-length'])
-            index += 1
-
-        answer = input("\nAre you sure you want to download all %d titles? [%s] [y/n] " % (len(urls), get_size_label(total_size)))
-        if answer.lower() == 'y':
-            for url in urls:
-
-                try:
-                    if args.directory:
-                        download(url, args.directory)
-                    else:
-                        download(url)
-                except TypeError:
-                    print("Error downloading '%s'" % url)
-    else:
-        print("No results for keywords '%s'" % ' '.join(args.batch))
+def set_default_directory(directory):
+    settings = os.path.join(os.path.dirname(os.path.realpath(__file__)), "directory.txt")
+    with open(settings, 'w', encoding='utf-8') as f:
+        f.write(directory)
+    f.close()
+    print(f"The default download directory has been set to '{directory}'.")
 
 
-def download(url, directory=os.getcwd()):
+def get_default_directory():
+    settings = os.path.join(os.path.dirname(os.path.realpath(__file__)), "directory.txt")
+    if os.path.isfile(settings):
+        return open(settings, encoding='utf-8').read()
+    return os.getcwd()
+
+
+def download():
     """ downloads rom """
+    gid = args.id
+    directory = get_default_directory()
+    if args.directory:
+        directory = args.directory
 
-    gid = url.split('/')[-1]
     game_link = "https://www.emuparadise.me/roms/get-download.php?gid=%s&test=true" % gid
     response = requests.get(game_link, headers={"referer": game_link}, stream=True)
     decoded_url = urllib.parse.unquote(response.url)
@@ -89,7 +104,7 @@ def download(url, directory=os.getcwd()):
     install = True
 
     if os.path.exists(download_path):
-        overwrite = input("'%s' already exists.\nOverwrite the file? [y/n] " % os.path.abspath(filename))
+        overwrite = input("'%s' already exists.\nOverwrite the file? [y/n] " % os.path.abspath(download_path))
         if overwrite.lower() != 'y':
             install = False
     if not os.path.isdir(directory):
@@ -101,63 +116,56 @@ def download(url, directory=os.getcwd()):
             install = False
 
     if install:
-        print("downloading '%s'" % filename)
+        print("Downloading '%s'." % filename)
         start_time = time.time()
         total_size = int(response.headers.get('content-length'))
         current_size = 0
-        bar_width = 30
 
         with open(download_path, 'wb') as f:
             for block in response.iter_content(1024**2):
                 f.write(block)
                 current_size += len(block)
-                download_percent = current_size / total_size * 100
-                bar_percent = "=" * int(current_size / total_size * bar_width)
-                bar_difference = " " * (bar_width - int(current_size / total_size * bar_width))
-                time_label = time.strftime("%H:%M:%S", time.gmtime(time.time() - start_time))
-                size_label = get_size_label(total_size)
-                remaining_time = int(((time.time() - start_time) / download_percent) * (100 - download_percent))
-                time_estimate = time.strftime("%H:%M:%S", time.gmtime(remaining_time))
-                bps = get_size_label(current_size // (time.time() - start_time))
-                print("\r%s %03d%%[%s%s] %s ETA %s %s/s" % (time_label, int(download_percent), bar_percent,
-                                                            bar_difference, size_label, time_estimate, bps), end="")
+                download_percentage = current_size / total_size * 100
+                time_elapsed = time.strftime("%H:%M:%S", time.gmtime(time.time() - start_time))
+                percentage = "%03d" % int(download_percentage)
+                progress_bar = get_progress_bar(current_size, total_size)
+                size = get_size_label(total_size)
+                eta = f"ETA {time.strftime('%H:%M:%S', time.gmtime(int(((time.time() - start_time) / download_percentage) * (100 - download_percentage))))}"
+                bps = f"{get_size_label(current_size // (time.time() - start_time))}/s"
+                print(f"\r{time_elapsed} {percentage}% {progress_bar} {size} {eta} "
+                      f"{' ' * (DOWNLOAD_RATE_SIZE - len(bps))}{bps}", end="")
             f.close()
-
-        print("\nfile saved to '%s'" % os.path.abspath(download_path))
+        print("\nFile saved to '%s'." % os.path.abspath(download_path))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('-d', '--default-rom-directory', help='Sets the default directory ROMs will be saved to.')
     sub_parsers = parser.add_subparsers()
-    search_parser = sub_parsers.add_parser('search', help='search for game')
-    search_parser.add_argument('-k', '--keywords', nargs='+', help='keywords to search', required=True)
-    search_parser.add_argument('-s', '--strict', action='store_true', help='uses strict search')
-    download_parser = sub_parsers.add_parser('download', help='download url or batch download titles')
-    download_parser.add_argument('-u', '--url', help='url of rom')
-    download_parser.add_argument('-b', '--batch', nargs='+', help='batch download all match results.')
-    download_parser.add_argument('-d', '--directory', help='directory rom will be saved in')
+    search_parser = sub_parsers.add_parser('search')
+    search_parser.add_argument('-k', '--keywords', nargs='+', help='Keywords to search for.', required=True)
+    search_parser.add_argument('--platform', action='store_true', help='Shows the platform next to each ROM.')
+    search_parser.add_argument('--strict', action='store_true', help='Search results will be more picky.')
+    download_parser = sub_parsers.add_parser('download')
+    download_parser.add_argument('-i', '--id', help='ID of the rom you wish to download.')
+    download_parser.add_argument('-d', '--directory', help='Directory the rom will be saved in. This overrides the default rom directory.')
     args = parser.parse_args()
 
-    batch_download = False
+    if args.default_rom_directory:
+        set_default_directory(args.default_rom_directory)
 
     try:
-        print(*search(args.keywords), sep='\n')
-    except AttributeError:
-        pass
-
-    try:
-        if args.batch:
-            batch_download = True
-    except AttributeError:
-        pass
-
-    try:
-        if batch_download:
-            download_batch(search(args.batch))
+        if args.keywords:
+            search()
         else:
-            if args.directory:
-                download(args.url, args.directory)
-            else:
-                download(args.url)
+            search_parser.print_help()
+    except AttributeError:
+        pass
+
+    try:
+        if args.id:
+            download()
+        else:
+            download_parser.print_help()
     except AttributeError:
         pass
