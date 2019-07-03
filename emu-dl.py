@@ -26,27 +26,6 @@ def get_progress_bar(current_download, total_download):
     return f"[{'=' * percentage}{' ' * (progress_bar_width - percentage)}]"
 
 
-def strict_search(database, keywords):
-    """ iterates over database returning all matching keyword sequences. """
-    matches = []
-    for x in database:
-        try:
-            if all([key.lower() in x.lower() for key in keywords]):
-                x_keys = x.lower().split('/')[-2].replace('_', ' ').split(' ')
-                if '-' in x_keys:
-                    x_keys.remove('-')
-                try:
-                    first_index = x_keys.index(keywords[0])
-                    if all([key.lower() == x_keys[first_index + index].lower() for index, key in enumerate(keywords)]):
-                        matches.append(x)
-                except ValueError:
-                    pass
-        except IndexError:
-            pass
-
-    return matches
-
-
 def search():
     """ searches database for keywords """
     database_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "database")
@@ -58,10 +37,7 @@ def search():
                 platform_string = platform.strip('.txt')
                 database.append(f"{platform_string}/{line}")
 
-    if args.strict:
-        matches = strict_search(database, args.keywords)
-    else:
-        matches = sorted([x for x in database if all([key.lower() in x.lower() for key in args.keywords])])
+    matches = sorted([x for x in database if all([key.lower() in x.lower() for key in args.keywords])])
 
     print(f"\n{len(matches)} results found...\n")
     for game in matches:
@@ -157,7 +133,6 @@ if __name__ == '__main__':
     search_parser = sub_parsers.add_parser('search')
     search_parser.add_argument('-k', '--keywords', nargs='+', help='Keywords to search for.', required=True)
     search_parser.add_argument('--platform', action='store_true', help='Shows the platform next to each ROM.')
-    search_parser.add_argument('--strict', action='store_true', help='Search results will be more picky.')
     download_parser = sub_parsers.add_parser('download')
     download_parser.add_argument('-i', '--id', help='ID of the rom you wish to download.')
     download_parser.add_argument('-d', '--directory', help='Directory the rom will be saved in. This overrides the default rom directory.')
