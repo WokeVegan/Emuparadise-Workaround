@@ -16,6 +16,9 @@ def get_progress_bar(current_download, total_download):
     """ returns progress bar"""
     actual_percentage_width = 4  # ex. 100%
     total_spaces = 6
+    if os.name == "nt":
+        total_spaces = 7
+
     terminal_width = os.get_terminal_size()[0]
     progress_bar_width = terminal_width - (actual_percentage_width + total_spaces +
                                            DOWNLOAD_RATE_SIZE + ETA_SIZE + DOWNLOAD_SIZE + TIME_SIZE)
@@ -46,21 +49,30 @@ def strict_search(database, keywords):
 
 def search():
     """ searches database for keywords """
-    database_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "database.txt")
-    database = [x.strip('\n') for x in open(database_path, encoding='utf-8').readlines()]
+    database_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "database")
+    database = []
+    for platform in os.listdir(database_path):
+        with open(os.path.join(database_path, platform), encoding='utf-8') as f:
+            for x in f.readlines():
+                line = x.strip('\n')
+                platform_string = platform.strip('.txt')
+                database.append(f"{platform_string}/{line}")
 
     if args.strict:
         matches = strict_search(database, args.keywords)
     else:
-        matches = sorted([x for x in database if all([key.lower() in x.lower() for key in args.keywords])], )
+        matches = sorted([x for x in database if all([key.lower() in x.lower() for key in args.keywords])])
 
     print(f"\n{len(matches)} results found...\n")
     for game in matches:
-        platform, title, gid = game.split('/')
+        platform, gid, title = game.split('/')
+        if os.name == "posix":
+            gid = f"\033[1;32;34m{gid}\033[0;32;37m"
+            platform = f"\033[2;32;37m{platform}\033[0;32;37m"
         if args.platform:
-            print(f"[\033[32m{gid}\033[37m][{platform}] {title}")
+            print(f"{gid}\t{platform} {title}")
         else:
-            print(f"[\033[32m{gid}\033[37m] {title}")
+            print(f"{gid}\t{title}")
 
 
 def get_size_label(size):
