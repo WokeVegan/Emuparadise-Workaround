@@ -1,118 +1,64 @@
-============
-emu-dl
-============
-emu-dl is a command line tool written in python that allows you to install games from Emuparadise.
+======================
+Emuparadise Workaround
+======================
+
+Emuparadise Workaround is exactly what is sounds like. It is a command-line tool written in Python that allows you to
+install games from Emuparadise.
 
 Installing Python and Requests
 ******************************
-Before running this script you must have installed Python 3.6+ and the requests library.
+Before running this script you must have installed Python 3.6+ and the requests library. You can download Python at
 `python.org <https://www.python.org/downloads/>`_
 
-Before you can install requests, you need to install pip though the Python installer.
+If you don't already have pip, make sure to install it through the Python installer.
 
 After Python and pip are installed, you can run the following command in a terminal to install requests.
 
 .. code-block:: text
 
-    $ pip install requests
-
-Now that you've installed Python and requests, you can use the script.
+    pip install requests
 
 Commands
 ********
 
-- Setting the Default Path
+- Setting the default download directory.
 
     .. code-block:: text
         
-        $ python emu-dl.py -d ...
+        python emuw.py -d /some/path
 
     Whenever you download a ROM, it will be saved to this path.
 
-- Searching for Games
+- Searching for games.
 
-    **Required Arguments**
+    .. code-block:: text
 
-    -k, --keywords  Keywords to search for.
+        python emuw.py search [-p] keywords [...]
+
+
+    **Positional Arguments**
+
+    -keywords  Keywords to search for.
 
     **Optional Arguments**
 
     -p, --platform  Shows the platform next to each ROM.
 
-    .. code-block:: text
-
-        $ python emu-dl.py search -k ... [--platform]
-   
-    This will list all matching games along with their ID.
 
 - Downloading Games
-    
-    **Required Arguments**
 
-    -i, --id  ID of the ROM you wish to download.
+    .. code-block:: text
+
+        python emuw.py download [-d] [-e] id
+
+
+    **Positional Arguments**
+
+    -id  ID of the ROM provided from the search command.
 
     **Optional Arguments**
 
-    -d, --directory  Directory the ROM will be saved to. This overrides the default download directory.
+    -d, --directory  The ROMs save directory. (overrides default directory)
 
-    .. code-block:: text
+    -e, --extract  Attempt to extract the zip file.
 
-        $ python emu-dl.py download -i ... [--directory]
-
-    You can get the ID from the search command.
-
-Examples
-********
-- Setting the Default Path
-
-    .. code-block:: text
-        
-        $ python emu-dl.py -d /path/to/directory
-        The default download directory has been set to '/path/to/directory'.
-
-- Searching
-
-    .. code-block:: text
-
-        $ python emu-dl.py search -k shrek super slam
-    
-        10 results found...
-
-        46252   Shrek - Super Slam (E)(Legacy)
-        46212   Shrek - Super Slam (U)(Mode 7)
-        45474   Shrek SuperSlam (E)(Rising Sun)
-        45462   Shrek SuperSlam (U)(Trashman)
-        181770  DreamWorks Shrek - SuperSlam (Europe) (En,Fr,Es,It)
-        181769  DreamWorks Shrek - SuperSlam (Europe)
-        181771  DreamWorks Shrek - SuperSlam (Germany)
-        66350   Shrek SuperSlam
-        153131  DreamWorks Shrek - SuperSlam (Europe) (Fr,Es,It,Nl)
-        153130  DreamWorks Shrek - SuperSlam (Europe)
-
-    .. code-block:: text
-
-        [$ python emu-dl.py search -k shrek super slam --platform
-
-        10 results found...
-
-        45462	Game Boy Advance Shrek SuperSlam (U)(Trashman)
-        45474	Game Boy Advance Shrek SuperSlam (E)(Rising Sun)
-        46212	Nintendo DS Shrek - Super Slam (U)(Mode 7)
-        46252	Nintendo DS Shrek - Super Slam (E)(Legacy)
-        181769	Nintendo Gamecube DreamWorks Shrek - SuperSlam (Europe)
-        181770	Nintendo Gamecube DreamWorks Shrek - SuperSlam (Europe) (En,Fr,Es,It)
-        181771	Nintendo Gamecube DreamWorks Shrek - SuperSlam (Germany)
-        66350	Nintendo Gamecube Shrek SuperSlam
-        153130	Sony Playstation 2 DreamWorks Shrek - SuperSlam (Europe)
-        153131	Sony Playstation 2 DreamWorks Shrek - SuperSlam (Europe) (Fr,Es,It,Nl)
-
-
-- Downloading
-
-    .. code-block:: text
-    
-        $ python emu-dl.py download -i 66350
-        Downloading 'Shrek SuperSlam (USA).7z'.
-        00:01:29 100% [==============================] 1.33GB ETA 00:00:00   14.89MB/s
-        File saved to '/path/to/directory/Shrek SuperSlam (USA).7z'.
- 
