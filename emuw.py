@@ -3,8 +3,8 @@
 __version__ = "07-08-2019"
 
 import argparse
-from source import tools
-from source import path
+from src import tools
+from src import path
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="emu-dl - Allows you to search and download ROMs from emuparadise.")
