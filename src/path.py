@@ -24,13 +24,3 @@ def get_default_directory():
         config.read(_DIRECTORY_PATH, encoding='utf-8')
         return config.get('DIRECTORY', 'default')
     return os.getcwd()
-
-
-def create_directory(path):
-    """ creates all directories in 'path' that don't exist. """
-    directories = path.split('/')
-    for x in range(len(directories)):
-        directory = "/".join([directories[x] for x in range(x+1)])
-        if not os.path.exists(directory):
-            if directory:
-                os.mkdir(directory)
