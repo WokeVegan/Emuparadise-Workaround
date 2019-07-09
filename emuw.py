@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = "07-08-2019"
+__version__ = "07-09-2019"
 
 import argparse
 from src import tools
