@@ -2,7 +2,7 @@
 
 import os
 import requests
-import zipfile
+import shutil
 import urllib.parse
 import time
 from src import path
@@ -73,7 +73,7 @@ def download(gid, directory=None, extract=False):
         question = f"'{directory}' doesnt exists yet.\nCreate the directory? [y/n] "
         create_dir = input(question)
         if create_dir.lower() == 'y':
-            path.create_directory(directory)
+            os.makedirs(directory)
         else:
             install = False
 
@@ -97,22 +97,16 @@ def download(gid, directory=None, extract=False):
                 eta = f"ETA {time.strftime('%H:%M:%S', current_time)}"
                 print(f"\r{time_elapsed} {percentage}% {progress_bar} {size} {eta}", end="")
             f.close()
-
-        extracted_successfully = False
+            print("\nFile saved to '%s'." % os.path.abspath(download_path))
 
         if extract:
-            if zipfile.is_zipfile(download_path):
-                print("Extracting zip file contents...")
-                with zipfile.ZipFile(download_path, 'r') as f:
-                    f.extractall(directory)
-                f.close()
-                print("Contents extracted to '%s'." % os.path.abspath(directory))
-                extracted_successfully = True
-            else:
-                print(f"{filename} is not a valid zip file.")
-
-        if not extracted_successfully:
-            print("\nFile saved to '%s'." % os.path.abspath(download_path))
+            print("Unpacking archive...")
+            try:
+                shutil.unpack_archive(download_path, directory)
+                print("Successfully extracted archive.")
+            except shutil.ReadError:
+                extension = os.path.splitext(download_path)[1]
+                print(f"Cannot extract '{extension}' files.")
 
 
 def search(keywords, show_platform=False):
