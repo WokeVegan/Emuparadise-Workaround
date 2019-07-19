@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 
-__version__ = "07-09-2019"
+__version__ = "07-19-2019"
 
 import argparse
 from src import tools
 from src import path
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="emu-dl - Allows you to search and download ROMs from emuparadise.")
-    parser.add_argument('-d', '--default-rom-directory', help='Sets the default directory games will be saved to.')
+    parser = argparse.ArgumentParser(description="emu-dl - Allows you to search and download ROMs from Emuparadise.")
+    parser.add_argument('-d', '--default-rom-directory', nargs="*", help='Sets the default directory games will be saved to.')
     parser.add_argument('-v', '--version', action='version', version=__version__)
     parser.set_defaults(action=None)
 
@@ -28,7 +28,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.default_rom_directory:
-        path.set_default_directory(args.default_rom_directory)
+        drd = args.default_rom_directory
+        if len(drd) > 1:
+            path.set_default_directory(drd[0], " ".join(drd[1:]).lower())
+        else:
+            path.set_default_directory(args.default_rom_directory[0], 'default')
 
     if args.action == 'search':
         if args.keywords:
@@ -45,5 +49,5 @@ if __name__ == '__main__':
         else:
             download_parser.print_help()
 
-    else:
+    if not any([args.default_rom_directory, args.action]):
         parser.print_help()
