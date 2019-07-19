@@ -25,7 +25,7 @@ Commands
 
     .. code-block:: text
         
-        python emuw.py -d /some/path
+        python emuw.py -d /some/path [optional platform]
 
     Whenever you download a ROM, it will be saved to this path.
 
