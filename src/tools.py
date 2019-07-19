@@ -11,16 +11,12 @@ from src import path
 def get_progress_bar(current_download, total_download):
     """ returns progress bar based on terminal width """
     terminal_width = os.get_terminal_size()[0]
-    download_size = 9
-    eta_size = 12
-    time_size = 8
-    percentage_width = 4
-    total_spaces = 5
+    occupied_space = 38
 
     if os.name == "nt":
-        total_spaces += 1
+        occupied_space += 1
 
-    progress_bar_width = terminal_width - (percentage_width + total_spaces + eta_size + download_size + time_size)
+    progress_bar_width = terminal_width - occupied_space
     percentage = int(current_download / total_download * progress_bar_width)
 
     return f"[{'=' * percentage}{' ' * (progress_bar_width - percentage)}]"
@@ -45,13 +41,27 @@ def check_bad_id(filename, gid):
         raise SystemExit
 
 
+def get_platform_by_gid(gid):
+    database_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "database")
+    current_platform = None
+    for filename in os.listdir(database_path):
+        name, extension = os.path.splitext(filename)
+        current_platform = name.lower()
+        with open(os.path.join(database_path, filename), 'r') as f:
+            for x in f.readlines():
+                if int(gid) == int(x.split('/')[0]):
+                    return current_platform
+            f.close()
+    return None
+
+
 def download(gid, directory=None, extract=False):
     """ attempt to download rom """
 
     if directory:
         directory = directory
     else:
-        directory = path.get_default_directory()
+        directory = path.get_default_directory(get_platform_by_gid(gid))
 
     game_link = f"https://www.emuparadise.me/roms/get-download.php?gid={gid}&test=true"
     response = requests.get(game_link, headers={"referer": game_link}, stream=True)
@@ -126,21 +136,15 @@ def search(keywords, show_platform=False):
 
     for game in matches:
         platform, gid, title = game.split('/')
-
+        gid_size = len(gid)
+        max_size = 6
+        gid = f"{' ' * (max_size - gid_size)}{gid}"
         if os.name == "posix":
-            underline = "\033[4;32;37m"
             default_color = "\033[0;32;37m"
             gid = f"\033[1;32;34m{gid}{default_color}"
             platform = f"\033[2;32;37m{platform}{default_color}"
-            colorized_title = []
-            for word in title.split(" "):
-                if word.lower() in [x.lower() for x in keywords]:
-                    colorized_title.append(f"{underline}{word}{default_color}")
-                else:
-                    colorized_title.append(word)
-            title = " ".join(colorized_title)
 
         if show_platform:
-            print(f"{gid}\t[{platform}] {title}")
+            print(f"{gid}[{platform}] {title}")
         else:
-            print(f"{gid}\t{title}")
+            print(f"{gid} {title}")
