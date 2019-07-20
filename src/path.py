@@ -7,9 +7,8 @@ DATABASE_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", 
 
 
 def get_list_platforms():
-    database_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "database")
     platforms = []
-    for platform in os.listdir(database_path):
+    for platform in os.listdir(DATABASE_PATH):
         platforms.append(os.path.splitext(platform)[0])
     return platforms
 
