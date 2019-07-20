@@ -9,6 +9,8 @@ import subprocess
 from src import path
 
 _DEFAULT_COLOR = "\033[0;32;37m"
+_GREY = "\033[2;32;37m"
+_BLUE = "\033[1;32;34m"
 _OCCUPIED_SPACE = 38
 _BAD_FILENAME = "get-download.php?gid=%s&test=true"
 _GAME_LINK = "https://www.emuparadise.me/roms/get-download.php?gid=%s&test=true"
@@ -17,22 +19,23 @@ _SIZES = {1000000000: "{:1.2f}GB", 1000000: "{0:02.2f}MB", 1000: "{:06.2f}KB", 0
 
 def unpack(filename, directory):
     """ unpacks archive files """
-    print("Attempting to unpack archive...")
+    print("Attempting to unpack...")
     try:
         shutil.unpack_archive(filename, directory)
-        print("Successfully extracted archive.")
+        print("Successfully extracted files.")
     except shutil.ReadError:
         if shutil.which('7z'):
             process = subprocess.Popen(["7z", "x", os.path.join(directory, filename),
-                                        f"-o{directory}"], stdout=subprocess.PIPE)
-            output, error = process.communicate()
+                                        f"-o{directory}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            _, error = process.communicate()
             if error:
-                print(error)
-            else:
-                print("Successfully extracted archive.")
+                print('Failed to extract.')
         else:
             extension = os.path.splitext(filename)[1]
-            print(f"Cannot extract '{extension}' files.")
+            if extension == "7z":
+                print("Cannot extract .7z files. Install 7zip and try again.")
+            else:
+                print(f"Cannot extract '{extension}' files.")
 
 
 def get_progress_bar(current_download, total_download):
@@ -142,8 +145,8 @@ def search(keywords, show_platform=False):
 
     for game in matches:
         platform, gid, title = game.split('/')
-        gid = f"\033[1;32;34m{' ' * (6 - len(gid))}{gid}{_DEFAULT_COLOR}"
-        platform = f"\033[2;32;37m{platform}{_DEFAULT_COLOR}"
+        gid = f"{_BLUE}{' ' * (6 - len(gid))}{gid}{_DEFAULT_COLOR}"
+        platform = f"{_GREY}{platform}{_DEFAULT_COLOR}"
 
         if show_platform:
             print(f"{gid}[{platform}] {title}")
