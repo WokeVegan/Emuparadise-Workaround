@@ -22,7 +22,7 @@ if __name__ == '__main__':
     download_parser = sub_parsers.add_parser('download')
     download_parser.add_argument('id', help='ID of the ROM provided from the search command.')
     download_parser.add_argument('-d', '--directory', help='The ROMs save directory. (overrides default directory)')
-    download_parser.add_argument('-e', '--extract', action="store_true", help='Attempt to extract the zip file.')
+    download_parser.add_argument('-e', '--extract', action="store_true", help='Attempt to extract the contents after downloading.')
     download_parser.set_defaults(action='download')
 
     args = parser.parse_args()
