@@ -5,6 +5,7 @@ import requests
 import shutil
 import urllib.parse
 import time
+import subprocess
 from src import path
 
 _DEFAULT_COLOR = "\033[0;32;37m"
@@ -12,6 +13,26 @@ _OCCUPIED_SPACE = 38
 _BAD_FILENAME = "get-download.php?gid=%s&test=true"
 _GAME_LINK = "https://www.emuparadise.me/roms/get-download.php?gid=%s&test=true"
 _SIZES = {1000000000: "{:1.2f}GB", 1000000: "{0:02.2f}MB", 1000: "{:06.2f}KB", 0: "{:02d}B"}
+
+
+def unpack(filename, directory):
+    """ unpacks archive files """
+    print("Attempting to unpack archive...")
+    try:
+        shutil.unpack_archive(filename, directory)
+        print("Successfully extracted archive.")
+    except shutil.ReadError:
+        if shutil.which('7z'):
+            process = subprocess.Popen(["7z", "x", os.path.join(directory, filename),
+                                        f"-o{directory}"], stdout=subprocess.PIPE)
+            output, error = process.communicate()
+            if error:
+                print(error)
+            else:
+                print("Successfully extracted archive.")
+        else:
+            extension = os.path.splitext(filename)[1]
+            print(f"Cannot extract '{extension}' files.")
 
 
 def get_progress_bar(current_download, total_download):
@@ -102,13 +123,7 @@ def download(gid, directory=None, extract=False):
             print("\nFile saved to '%s'." % os.path.abspath(download_path))
 
         if extract:
-            print("Attempting to unpack archive...")
-            try:
-                shutil.unpack_archive(download_path, directory)
-                print("Successfully extracted archive.")
-            except shutil.ReadError:
-                extension = os.path.splitext(download_path)[1]
-                print(f"Cannot extract '{extension}' files.")
+            unpack(download_path, directory)
 
 
 def search(keywords, show_platform=False):
