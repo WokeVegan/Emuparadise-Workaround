@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
-__version__ = "07-19-2019"
+__version__ = "Version 1.0 (Linux)"
 
 import argparse
 from src import tools
 from src import path
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="emu-dl - Allows you to search and download ROMs from Emuparadise.")
+    parser = argparse.ArgumentParser(description="Allows you to search and download ROMs from Emuparadise.")
     parser.add_argument('-d', '--default-rom-directory', nargs="*", help='Sets the default directory games will be saved to.')
     parser.add_argument('-v', '--version', action='version', version=__version__)
     parser.set_defaults(action=None)
@@ -15,8 +15,8 @@ if __name__ == '__main__':
     sub_parsers = parser.add_subparsers()
 
     search_parser = sub_parsers.add_parser('search')
-    search_parser.add_argument('keywords', nargs='+', help='Keywords to search for.')
-    search_parser.add_argument('-p', '--platform', action='store_true', help='Shows the platform next to each ROM.')
+    search_parser.add_argument('keywords', nargs='+', help='A list of keywords to search for.')
+    search_parser.add_argument('-p', '--platform', action='store_true', help='Display the platform next to each game.')
     search_parser.set_defaults(action='search')
 
     download_parser = sub_parsers.add_parser('download')
@@ -28,9 +28,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.default_rom_directory:
-        drd = args.default_rom_directory
-        if len(drd) > 1:
-            path.set_default_directory(drd[0], " ".join(drd[1:]).lower())
+        if len(args.default_rom_directory) > 1:
+            path.set_default_directory(args.default_rom_directory[0], " ".join(args.default_rom_directory[1:]).lower())
         else:
             path.set_default_directory(args.default_rom_directory[0], 'default')
 

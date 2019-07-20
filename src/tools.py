@@ -7,25 +7,24 @@ import urllib.parse
 import time
 from src import path
 
+_DEFAULT_COLOR = "\033[0;32;37m"
+_OCCUPIED_SPACE = 38
+_BAD_FILENAME = "get-download.php?gid=%s&test=true"
+_GAME_LINK = "https://www.emuparadise.me/roms/get-download.php?gid=%s&test=true"
+_SIZES = {1000000000: "{:1.2f}GB", 1000000: "{0:02.2f}MB", 1000: "{:06.2f}KB", 0: "{:02d}B"}
+
 
 def get_progress_bar(current_download, total_download):
     """ returns progress bar based on terminal width """
     terminal_width = os.get_terminal_size()[0]
-    occupied_space = 38
-
-    if os.name == "nt":
-        occupied_space += 1
-
-    progress_bar_width = terminal_width - occupied_space
+    progress_bar_width = terminal_width - _OCCUPIED_SPACE
     percentage = int(current_download / total_download * progress_bar_width)
-
     return f"[{'=' * percentage}{' ' * (progress_bar_width - percentage)}]"
 
 
 def get_size_label(size):
     """ returns a prettier size label """
-    sizes = {1000000000: "{:1.2f}GB", 1000000: "{0:02.2f}MB", 1000: "{:06.2f}KB",  0: "{:02d}B"}
-    for key, value in sizes.items():
+    for key, value in _SIZES.items():
         if size >= key:
             try:
                 return value.format(size / key)
@@ -35,19 +34,17 @@ def get_size_label(size):
 
 def check_bad_id(filename, gid):
     """ exit if download link is bad """
-    bad_filename = f"get-download.php?gid={gid}&test=true"
-    if filename == bad_filename:
+    if filename == _BAD_FILENAME % gid:
         print("Failed to download due to bad ID.")
         raise SystemExit
 
 
 def get_platform_by_gid(gid):
-    database_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "database")
-    current_platform = None
-    for filename in os.listdir(database_path):
+    """ search for gid in database and return the platform it's contained in """
+    for filename in os.listdir(path.DATABASE_PATH):
         name, extension = os.path.splitext(filename)
         current_platform = name.lower()
-        with open(os.path.join(database_path, filename), 'r') as f:
+        with open(os.path.join(path.DATABASE_PATH, filename), 'r') as f:
             for x in f.readlines():
                 if int(gid) == int(x.split('/')[0]):
                     return current_platform
@@ -57,18 +54,13 @@ def get_platform_by_gid(gid):
 
 def download(gid, directory=None, extract=False):
     """ attempt to download rom """
-
-    if directory:
-        directory = directory
-    else:
+    if not directory:
         directory = path.get_default_directory(get_platform_by_gid(gid))
 
-    game_link = f"https://www.emuparadise.me/roms/get-download.php?gid={gid}&test=true"
-    response = requests.get(game_link, headers={"referer": game_link}, stream=True)
+    response = requests.get(_GAME_LINK % gid, headers={"referer": _GAME_LINK % gid}, stream=True)
     decoded_url = urllib.parse.unquote(response.url)
     filename = decoded_url.split('/')[-1]
     download_path = os.path.join(directory, filename)
-
     check_bad_id(filename, gid)
 
     install = True
@@ -110,7 +102,7 @@ def download(gid, directory=None, extract=False):
             print("\nFile saved to '%s'." % os.path.abspath(download_path))
 
         if extract:
-            print("Unpacking archive...")
+            print("Attempting to unpack archive...")
             try:
                 shutil.unpack_archive(download_path, directory)
                 print("Successfully extracted archive.")
@@ -121,10 +113,9 @@ def download(gid, directory=None, extract=False):
 
 def search(keywords, show_platform=False):
     """ prints all matching games """
-    database_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "database")
     database = []
-    for platform in os.listdir(database_path):
-        with open(os.path.join(database_path, platform), encoding='utf-8') as f:
+    for platform in os.listdir(path.DATABASE_PATH):
+        with open(os.path.join(path.DATABASE_PATH, platform), encoding='utf-8') as f:
             for x in f.readlines():
                 line = x.strip('\n')
                 platform_string = platform.strip('.txt')
@@ -136,13 +127,8 @@ def search(keywords, show_platform=False):
 
     for game in matches:
         platform, gid, title = game.split('/')
-        gid_size = len(gid)
-        max_size = 6
-        gid = f"{' ' * (max_size - gid_size)}{gid}"
-        if os.name == "posix":
-            default_color = "\033[0;32;37m"
-            gid = f"\033[1;32;34m{gid}{default_color}"
-            platform = f"\033[2;32;37m{platform}{default_color}"
+        gid = f"\033[1;32;34m{' ' * (6 - len(gid))}{gid}{_DEFAULT_COLOR}"
+        platform = f"\033[2;32;37m{platform}{_DEFAULT_COLOR}"
 
         if show_platform:
             print(f"{gid}[{platform}] {title}")
