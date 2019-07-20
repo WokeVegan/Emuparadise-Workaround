@@ -17,21 +17,21 @@ _SIZES = {1000000000: "{:1.2f}GB", 1000000: "{0:02.2f}MB", 1000: "{:06.2f}KB", 0
 
 def unpack(filename, directory):
     """ unpacks archive files """
-    print("Attempting to unpack archive...")
+    print("Attempting to unpack...")
     try:
         shutil.unpack_archive(filename, directory)
-        print("Successfully extracted archive.")
+        print("Successfully extracted files.")
     except shutil.ReadError:
         if shutil.which('7z'):
             process = subprocess.Popen(["7z", "x", os.path.join(directory, filename),
-                                        f"-o{directory}"], stdout=subprocess.PIPE)
-            output, error = process.communicate()
+                                        f"-o{directory}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            _, error = process.communicate()
             if error:
-                print(error)
-            else:
-                print("Successfully extracted archive.")
+                print('Failed to extract.')
         else:
             extension = os.path.splitext(filename)[1]
+            if extension == "7z":
+                print("Cannot extract .7z files. Install 7zip and try again.")
             print(f"Cannot extract '{extension}' files.")
 
 
