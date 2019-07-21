@@ -1,7 +1,4 @@
-exclude/
-*.7z
-*.zip
-*.rar
-.idea/
 __pycache__/
-
+.idea/
+exclude/
+settings.cfg
