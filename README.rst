@@ -36,6 +36,8 @@ Commands
 
     -p, --platform  Display the platform next to each game.
 
+    This will list all matches found in the database with their IDs. If you use -p, their platforms will be listed as well.
+
 
 - Downloading Games
 
@@ -55,3 +57,5 @@ Commands
     -e, --extract  Attempt to extract the contents after downloading.
 
     -s, --scrap  Scrap user uploaded images of game.
+
+    This downloads the specified game. You can choose to install it in a specific directory, extract the files, or download user uploaded images with the optional arguments.
