@@ -6,6 +6,8 @@ import shutil
 import urllib.parse
 import time
 import subprocess
+import bs4
+
 from src import path
 
 _DEFAULT_COLOR = "\033[0;32;37m"
@@ -15,6 +17,67 @@ _OCCUPIED_SPACE = 38
 _BAD_FILENAME = "get-download.php?gid=%s&test=true"
 _GAME_LINK = "https://www.emuparadise.me/roms/get-download.php?gid=%s&test=true"
 _SIZES = {1000000000: "{:1.2f}GB", 1000000: "{0:02.2f}MB", 1000: "{:06.2f}KB", 0: "{:02d}B"}
+_IMAGE_DATABASE_URL = "https://r.mprd.se/media/images"
+_EMUPARADISE_URL = "https://www.emuparadise.me"
+_PLATFORM_NAMES = {
+    'abandonware': 'Abandonware_Games',
+    'acorn archimedes': 'Acorn_Archimedes_ROMs',
+    'acorn bbc micro': 'Acorn_BBC_Micro_ROMs',
+    'acorn electron': 'Acorn_Electron_ROMs',
+    'amiga cd': 'Amiga_CD_ISOs',
+    'amiga cd32': 'Amiga_CD32_ISOs',
+    'amstrad cpc': 'Amstrad_CPC_ROMs',
+    'apple ii': 'Apple_][_ROMs',
+    'atari 2600': 'Atari_2600_ROMs',
+    'atari 5200': 'Atari_5200_ROMs',
+    'atari 7800': 'Atari_7800_ROMs',
+    'atari 8-bit family': 'Atari_8-bit_Family_ROMs',
+    'atari jaguar': 'Atari_Jaguar_ROMs',
+    'atari lynx': 'Atari_Lynx_ROMs',
+    'bandai playdia': 'Bandai_Playdia_ISOs',
+    'bandai wonderswan': 'Bandai_Wonderswan_ROMs',
+    'bandai wonderswan color': 'Bandai_Wonderswan_Color_ROMs',
+    'capcom play system 1': 'Capcom_Play_System_1_ROMs',
+    'capcom play system 2': 'Capcom_Play_System_2_ROMs',
+    'capcom play system 3': 'Capcom_Play_System_3_ROMs',
+    'commodore 64 (tapes)': 'Commodore_64_(Tapes)_ROMs',
+    'commodore 64 preservation project': 'Commodore_64_Preservation_Project_ROMs',
+    'game boy': 'Nintendo_Game_Boy_ROMs',
+    'game boy advance': 'Nintendo_Gameboy_Advance_ROMs',
+    'game boy color': 'Nintendo_Game_Boy_Color_ROMs',
+    'nes': 'Nintendo_Entertainment_System_ROMs',
+    'neo geo': 'Neo_Geo_ROMs',
+    'neo geo pocket - neo geo pocket color (ngpx)': 'Neo_Geo_Pocket_-_Neo_Geo_Pocket_Color_(NGPx)_ROMs',
+    'nintendo 64': 'Nintendo_64_ROMs',
+    'nintendo ds': 'Nintendo_DS_ROMs',
+    'nintendo famicom disk system': 'Nintendo_Famicom_Disk_System_ROMs',
+    'nintendo gamecube': 'Nintendo_Gamecube_ISOs',
+    'nokia n-gage': 'Nokia_N-Gage_ROMs',
+    'pc engine - turbografx16': 'PC_Engine_-_TurboGrafx16_ROMs',
+    'pc engine cd - turbo duo - turbografx cd': 'PC_Engine_CD_-_Turbo_Duo_-_TurboGrafx_CD_ISOs',
+    'pc-fx': 'PC-FX_ISOs',
+    'psp': 'PSP_ISOs',
+    'psx on psp': 'PSX_on_PSP_ISOs',
+    'panasonic 3do (3do interactive multiplayer)': 'Panasonic_3DO_(3DO_Interactive_Multiplayer)_ISOs',
+    'philips cd-i': 'Philips_CD-i_ISOs',
+    'playstation': 'Sony_Playstation_ISOs',
+    'playstation 2': 'Sony_Playstation_2_ISOs',
+    'snes': 'Super_Nintendo_Entertainment_System_(SNES)_ROMs',
+    'scummvm': 'ScummVM_Games',
+    'sega 32x': 'Sega_32X_ROMs',
+    'sega cd': 'Sega_CD_ISOs',
+    'sega game gear': 'Sega_Game_Gear_ROMs',
+    'sega genesis - sega megadrive': 'Sega_Genesis_-_Sega_Megadrive_ROMs',
+    'sega master system': 'Sega_Master_System_ROMs',
+    'sega naomi': 'Sega_NAOMI_ROMs',
+    'sega saturn': 'Sega_Saturn_ISOs',
+    'sharp x68000': 'Sharp_X68000_ROMs',
+    'sony playstation - demos': 'Sony_Playstation_-_Demos_ISOs',
+    'sony pocketstation': 'Sony_PocketStation_ROMs',
+    'virtual boy': 'Nintendo_Virtual_Boy_ROMs',
+    'zx spectrum (tapes)': 'ZX_Spectrum_(Tapes)_ROMs',
+    'zx spectrum (z80)': 'X_Spectrum_(Z80)_ROMs'
+}
 
 
 def unpack(filename, directory):
@@ -76,7 +139,43 @@ def get_platform_by_gid(gid):
     return None
 
 
-def download(gid, directory=None, extract=False):
+def get_title_by_gid(gid):
+    """ search for gid in database and return the platform it's contained in """
+    for filename in os.listdir(path.DATABASE_PATH):
+        with open(os.path.join(path.DATABASE_PATH, filename), 'r') as f:
+            for x in f.readlines():
+                if int(gid) == int(x.split('/')[0]):
+                    return x.split('/')[1]
+            f.close()
+    return None
+
+
+def download_images(gid, directory):
+    platform = _PLATFORM_NAMES[get_platform_by_gid(gid)]
+    title = get_title_by_gid(gid).replace(" ", "_").strip('\n')
+    url = f"{_EMUPARADISE_URL}/{platform}/{title}/{gid}"
+    response = requests.get(url)
+    soup = bs4.BeautifulSoup(response.text, "html.parser")
+    abc = soup.find(id='slider')
+
+    try:
+        for x in abc.find_all('li'):
+            d = x.find('a', href=True)
+
+            if _IMAGE_DATABASE_URL.replace('https://', '') in d['href']:
+                filename = d['href'].split('/')[-1]
+                img_url = f"{_IMAGE_DATABASE_URL}/{filename}"
+                print('downloading %s' % filename)
+                response = requests.get(img_url)
+                with open(os.path.join(directory, filename), 'wb') as f:
+                    for chunk in response.iter_content(1024**2):
+                        f.write(chunk)
+                    f.close()
+    except BaseException:
+        print("Failed to scrap images...")
+
+
+def download(gid, directory=None, extract=False, scrap_images=False):
     """ attempt to download rom """
     if not directory:
         directory = path.get_default_directory(get_platform_by_gid(gid))
@@ -127,6 +226,8 @@ def download(gid, directory=None, extract=False):
 
         if extract:
             unpack(download_path, directory)
+        if scrap_images:
+            download_images(gid, directory)
 
 
 def search(keywords, show_platform=False):
