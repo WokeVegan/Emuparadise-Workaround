@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 
-__version__ = "Version 1.1 (Linux)"
+__version__ = 'Version 1.2'
 
 import argparse
 from src import tools
 from src import path
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Allows you to search and download ROMs from Emuparadise.")
-    parser.add_argument('-d', '--default-rom-directory', nargs="*", help='Sets the default directory games will be saved to.')
+    parser = argparse.ArgumentParser(description='Allows you to search and download ROMs from Emuparadise.')
+    parser.add_argument('-d', '--default-rom-directory', nargs='*', help='Sets the default directory games will be saved to.')
     parser.add_argument('-v', '--version', action='version', version=__version__)
     parser.set_defaults(action=None)
 
@@ -22,14 +22,15 @@ if __name__ == '__main__':
     download_parser = sub_parsers.add_parser('download')
     download_parser.add_argument('id', help='ID of the ROM provided from the search command.')
     download_parser.add_argument('-d', '--directory', help='The ROMs save directory. (overrides default directory)')
-    download_parser.add_argument('-e', '--extract', action="store_true", help='Attempt to extract the contents after downloading.')
+    download_parser.add_argument('-e', '--extract', action='store_true', help='Attempt to extract the contents after downloading.')
+    download_parser.add_argument('-s', '--scrap', action='store_true', help='Scrap user uploaded images of game.')
     download_parser.set_defaults(action='download')
 
     args = parser.parse_args()
 
     if args.default_rom_directory:
         if len(args.default_rom_directory) > 1:
-            path.set_default_directory(args.default_rom_directory[0], " ".join(args.default_rom_directory[1:]).lower())
+            path.set_default_directory(args.default_rom_directory[0], ' '.join(args.default_rom_directory[1:]).lower())
         else:
             path.set_default_directory(args.default_rom_directory[0], 'default')
 
@@ -44,7 +45,7 @@ if __name__ == '__main__':
             directory = None
             if args.directory:
                 directory = args.directory
-            tools.download(args.id, args.directory, args.extract)
+            tools.download(args.id, args.directory, args.extract, args.scrap)
         else:
             download_parser.print_help()
 
