@@ -2,13 +2,13 @@
 Emuparadise Workaround
 ======================
 
-Emuparadise Workaround is exactly what is sounds like. It is a command-line tool written in Python that allows you to
-install games from Emuparadise.
+Emuparadise Workaround is a command-line tool written in Python that allows you to install games from Emuparadise.
 
 Requirements
 ************
 - Python 3.6+
-- requests library
+- See requirements.txt for required python packages
+- 7zip (optional); if you have 7zip installed, you can extract .7z files with -e
 
 Commands
 ********
@@ -41,7 +41,7 @@ Commands
 
     .. code-block:: text
 
-        python emuw.py download [-d] [-e] id
+        python emuw.py download [-d] [-e] [-s] id
 
 
     **Positional Arguments**
@@ -54,3 +54,4 @@ Commands
 
     -e, --extract  Attempt to extract the contents after downloading.
 
+    -s, --scrap  Scrap user uploaded images of game.
