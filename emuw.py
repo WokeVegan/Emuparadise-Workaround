@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-__version__ = 'Version 1.3'
-
 import argparse
 from src import tools
 from src import path
@@ -9,7 +7,6 @@ from src import path
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Allows you to search and download ROMs from Emuparadise.')
     parser.add_argument('-d', '--default-rom-directory', nargs='*', help='Sets the default directory games will be saved to.')
-    parser.add_argument('-v', '--version', action='version', version=__version__)
     parser.set_defaults(action=None)
 
     sub_parsers = parser.add_subparsers()
