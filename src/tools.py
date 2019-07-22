@@ -185,24 +185,27 @@ def download_images(gid, directory):
         soup = bs4.BeautifulSoup(response.text, "html.parser")
         abc = soup.find(id='slider')
 
-        for x in abc.find_all('li'):
-            d = x.find('a', href=True)
+        try:
+            for x in abc.find_all('li'):
+                d = x.find('a', href=True)
 
-            if _IMAGE_DATABASE_URL.replace('https://', '') in d['href']:
-                filename = d['href'].split('/')[-1]
-                print("Downloading '%s'..." % filename)
-                img_url = f"{_IMAGE_DATABASE_URL}/{filename}"
-                start_time = time.time()
-                response = requests.get(img_url)
-                total_size = int(response.headers.get('content-length'))
-                current_size = 0
-                with open(os.path.join(directory, filename), 'wb') as f:
-                    for chunk in response.iter_content(1024**2):
-                        f.write(chunk)
-                        current_size += len(chunk)
-                        print(get_progress_bar(current_size, total_size, start_time), end="")
-                    f.close()
-                print(f"\nFile saved to '{os.path.join(directory, filename)}'.\n")
+                if _IMAGE_DATABASE_URL.replace('https://', '') in d['href']:
+                    filename = d['href'].split('/')[-1]
+                    print("Downloading '%s'..." % filename)
+                    img_url = f"{_IMAGE_DATABASE_URL}/{filename}"
+                    start_time = time.time()
+                    response = requests.get(img_url)
+                    total_size = int(response.headers.get('content-length'))
+                    current_size = 0
+                    with open(os.path.join(directory, filename), 'wb') as f:
+                        for chunk in response.iter_content(1024**2):
+                            f.write(chunk)
+                            current_size += len(chunk)
+                            print(get_progress_bar(current_size, total_size, start_time), end="")
+                        f.close()
+                    print(f"\nFile saved to '{os.path.join(directory, filename)}'.\n")
+        except AttributeError:
+            print("No images to download.")
     else:
         print("Cannot scrap images. Try installing bs4.")
 
