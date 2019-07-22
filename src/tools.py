@@ -1,14 +1,25 @@
 #!/usr/bin/env python3
 
 import os
-import requests
 import shutil
 import urllib.parse
 import time
-import subprocess
-import bs4
+import requests
 
 from src import path
+
+try:
+    import bs4
+    IMPORTED_BS4 = True
+except ModuleNotFoundError:
+    IMPORTED_BS4 = False
+
+try:
+    import libarchive.public
+    IMPORTED_LIBARCHIVE = True
+except ModuleNotFoundError:
+    IMPORTED_LIBARCHIVE = False
+
 
 _DEFAULT_COLOR = "\033[0;32;37m"
 _GREY = "\033[2;32;37m"
@@ -82,31 +93,46 @@ _PLATFORM_NAMES = {
 
 def unpack(filename, directory):
     """ unpacks archive files """
-    print("Attempting to unpack...")
-    try:
-        shutil.unpack_archive(filename, directory)
-        print("Successfully extracted files.")
-    except shutil.ReadError:
-        if shutil.which('7z'):
-            process = subprocess.Popen(["7z", "x", os.path.join(directory, filename),
-                                        f"-o{directory}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            _, error = process.communicate()
-            if error:
-                print('Failed to extract.')
-        else:
-            extension = os.path.splitext(filename)[1]
-            if extension == "7z":
-                print("Cannot extract .7z files. Install 7zip and try again.")
-            else:
-                print(f"Cannot extract '{extension}' files.")
+    file_path = os.path.join(directory, filename)
+    if IMPORTED_LIBARCHIVE:
+        with libarchive.public.file_reader(file_path) as e:
+            print("Unpacking '%s'...\n" % file_path)
+            for entry in e:
+                current_size = 0
+                total_size = entry.size
+                filename = os.path.join(directory, entry.pathname)
+                start_time = time.time()
+                print("Extracting '%s'..." % os.path.split(filename)[-1])
+
+                with open(filename, 'wb') as f:
+                    for block in entry.get_blocks():
+                        f.write(block)
+                        current_size += len(block)
+                        progress_bar = get_progress_bar(current_size, total_size, start_time)
+                        print(progress_bar, end="")
+                    f.close()
+                print(f"\nFile saved to '{filename}'.\n")
+    else:
+        try:
+            shutil.unpack_archive(filename, directory)
+        except shutil.ReadError:
+            extension = os.path.splitext(file_path)[1]
+            print(f"Cannot unpack '{extension}' files. Try installing libarchive.")
 
 
-def get_progress_bar(current_download, total_download):
+def get_progress_bar(current_download, total_download, start_time):
     """ returns progress bar based on terminal width """
     terminal_width = os.get_terminal_size()[0]
+    download_percentage = current_download / total_download * 100
+    percentage_formatted = "%03d" % int(download_percentage)
+    time_elapsed = time.strftime("%H:%M:%S", time.gmtime(time.time() - start_time))
+    size = get_size_label(total_download)
+    current_time = time.gmtime(int(((time.time() - start_time) / download_percentage) * (100 - download_percentage)))
+    eta = f"ETA {time.strftime('%H:%M:%S', current_time)}"
     progress_bar_width = terminal_width - _OCCUPIED_SPACE
     percentage = int(current_download / total_download * progress_bar_width)
-    return f"[{'=' * percentage}{' ' * (progress_bar_width - percentage)}]"
+    bar = f"[{'=' * percentage}{' ' * (progress_bar_width - percentage)}]"
+    return f"\r{time_elapsed} {percentage_formatted}% {bar} {size} {eta}"
 
 
 def get_size_label(size):
@@ -151,28 +177,34 @@ def get_title_by_gid(gid):
 
 
 def download_images(gid, directory):
-    platform = _PLATFORM_NAMES[get_platform_by_gid(gid)]
-    title = get_title_by_gid(gid).replace(" ", "_").strip('\n')
-    url = f"{_EMUPARADISE_URL}/{platform}/{title}/{gid}"
-    response = requests.get(url)
-    soup = bs4.BeautifulSoup(response.text, "html.parser")
-    abc = soup.find(id='slider')
+    if IMPORTED_BS4:
+        platform = _PLATFORM_NAMES[get_platform_by_gid(gid)]
+        title = get_title_by_gid(gid).replace(" ", "_").strip('\n')
+        url = f"{_EMUPARADISE_URL}/{platform}/{title}/{gid}"
+        response = requests.get(url)
+        soup = bs4.BeautifulSoup(response.text, "html.parser")
+        abc = soup.find(id='slider')
 
-    try:
         for x in abc.find_all('li'):
             d = x.find('a', href=True)
 
             if _IMAGE_DATABASE_URL.replace('https://', '') in d['href']:
                 filename = d['href'].split('/')[-1]
+                print("Downloading '%s'..." % filename)
                 img_url = f"{_IMAGE_DATABASE_URL}/{filename}"
-                print('downloading %s' % filename)
+                start_time = time.time()
                 response = requests.get(img_url)
+                total_size = int(response.headers.get('content-length'))
+                current_size = 0
                 with open(os.path.join(directory, filename), 'wb') as f:
                     for chunk in response.iter_content(1024**2):
                         f.write(chunk)
+                        current_size += len(chunk)
+                        print(get_progress_bar(current_size, total_size, start_time), end="")
                     f.close()
-    except BaseException:
-        print("Failed to scrap images...")
+                print(f"\nFile saved to '{os.path.join(directory, filename)}'.\n")
+    else:
+        print("Cannot scrap images. Try installing bs4.")
 
 
 def download(gid, directory=None, extract=False, scrap_images=False):
@@ -203,7 +235,7 @@ def download(gid, directory=None, extract=False, scrap_images=False):
             install = False
 
     if install:
-        print("Downloading '%s'." % filename)
+        print("\nDownloading '%s'." % filename)
         start_time = time.time()
         total_size = int(response.headers.get('content-length'))
         current_size = 0
@@ -212,17 +244,10 @@ def download(gid, directory=None, extract=False, scrap_images=False):
             for block in response.iter_content(1024**2):
                 f.write(block)
                 current_size += len(block)
-                download_percentage = current_size / total_size * 100
-                time_elapsed = time.strftime("%H:%M:%S", time.gmtime(time.time() - start_time))
-                percentage = "%03d" % int(download_percentage)
-                progress_bar = get_progress_bar(current_size, total_size)
-                size = get_size_label(total_size)
-                current_time = time.gmtime(int(((time.time() - start_time) / download_percentage) *
-                                               (100 - download_percentage)))
-                eta = f"ETA {time.strftime('%H:%M:%S', current_time)}"
-                print(f"\r{time_elapsed} {percentage}% {progress_bar} {size} {eta}", end="")
+                progress_bar = get_progress_bar(current_size, total_size, start_time)
+                print(progress_bar, end="")
             f.close()
-            print("\nFile saved to '%s'." % os.path.abspath(download_path))
+            print("\nFile saved to '%s'.\n" % os.path.abspath(download_path))
 
         if extract:
             unpack(download_path, directory)
