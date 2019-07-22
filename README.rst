@@ -65,6 +65,4 @@ Commands
 
     -e, --extract  Attempt to extract the contents after downloading.
 
-    -s, --scrap  Scrap user uploaded images of game.
-
-    This downloads the specified game. You can choose to install it in a specific directory, extract the files, or download user uploaded images with the optional arguments.
+    This downloads the specified game. You can choose to install it in a specific directory or extract the files.
