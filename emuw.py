@@ -17,10 +17,9 @@ if __name__ == '__main__':
     search_parser.set_defaults(action='search')
 
     download_parser = sub_parsers.add_parser('download')
-    download_parser.add_argument('id', help='ID of the ROM provided from the search command.')
+    download_parser.add_argument('id', nargs="+", help='ID of the ROM provided from the search command.')
     download_parser.add_argument('-d', '--directory', help='The ROMs save directory. (overrides default directory)')
     download_parser.add_argument('-e', '--extract', action='store_true', help='Attempt to extract the contents after downloading.')
-    download_parser.add_argument('-s', '--scrap', action='store_true', help='Scrap user uploaded images of game.')
     download_parser.set_defaults(action='download')
 
     args = parser.parse_args()
@@ -42,7 +41,8 @@ if __name__ == '__main__':
             directory = None
             if args.directory:
                 directory = args.directory
-            tools.download(args.id, args.directory, args.extract, args.scrap)
+            for x in args.id:
+                tools.download(x, args.directory, args.extract, args.scrap)
         else:
             download_parser.print_help()
 

@@ -94,15 +94,20 @@ _PLATFORM_NAMES = {
 def unpack(filename, directory):
     """ unpacks archive files """
     file_path = os.path.join(directory, filename)
+    folder_name = os.path.splitext(filename)[0]
+    folder_path = os.path.join(directory, folder_name)
+
+    if not os.path.exists(folder_path):
+        os.mkdir(folder_path)
+
     if IMPORTED_LIBARCHIVE:
         with libarchive.public.file_reader(file_path) as e:
-            print("Unpacking '%s'...\n" % file_path)
             for entry in e:
                 current_size = 0
                 total_size = entry.size
-                filename = os.path.join(directory, entry.pathname)
+                filename = os.path.join(folder_path, entry.pathname)
                 start_time = time.time()
-                print("Extracting '%s'..." % os.path.split(filename)[-1])
+                print(f"\nExtracting '{os.path.split(filename)[-1]}'.")
 
                 with open(filename, 'wb') as f:
                     for block in entry.get_blocks():
@@ -111,7 +116,7 @@ def unpack(filename, directory):
                         progress_bar = get_progress_bar(current_size, total_size, start_time)
                         print(progress_bar, end="")
                     f.close()
-                print(f"\nFile saved to '{filename}'.\n")
+            print(f"\nAll files extracted to '{folder_path}'.")
     else:
         try:
             shutil.unpack_archive(filename, directory)
@@ -176,40 +181,6 @@ def get_title_by_gid(gid):
     return None
 
 
-def download_images(gid, directory):
-    if IMPORTED_BS4:
-        platform = _PLATFORM_NAMES[get_platform_by_gid(gid)]
-        title = get_title_by_gid(gid).replace(" ", "_").strip('\n')
-        url = f"{_EMUPARADISE_URL}/{platform}/{title}/{gid}"
-        response = requests.get(url)
-        soup = bs4.BeautifulSoup(response.text, "html.parser")
-        abc = soup.find(id='slider')
-
-        try:
-            for x in abc.find_all('li'):
-                d = x.find('a', href=True)
-
-                if _IMAGE_DATABASE_URL.replace('https://', '') in d['href']:
-                    filename = d['href'].split('/')[-1]
-                    print("Downloading '%s'..." % filename)
-                    img_url = f"{_IMAGE_DATABASE_URL}/{filename}"
-                    start_time = time.time()
-                    response = requests.get(img_url)
-                    total_size = int(response.headers.get('content-length'))
-                    current_size = 0
-                    with open(os.path.join(directory, filename), 'wb') as f:
-                        for chunk in response.iter_content(1024**2):
-                            f.write(chunk)
-                            current_size += len(chunk)
-                            print(get_progress_bar(current_size, total_size, start_time), end="")
-                        f.close()
-                    print(f"\nFile saved to '{os.path.join(directory, filename)}'.\n")
-        except AttributeError:
-            print("No images to download.")
-    else:
-        print("Cannot scrap images. Try installing bs4.")
-
-
 def download(gid, directory=None, extract=False, scrap_images=False):
     """ attempt to download rom """
     if not directory:
@@ -250,7 +221,7 @@ def download(gid, directory=None, extract=False, scrap_images=False):
                 progress_bar = get_progress_bar(current_size, total_size, start_time)
                 print(progress_bar, end="")
             f.close()
-            print("\nFile saved to '%s'.\n" % os.path.abspath(download_path))
+            print("\nFile saved to '%s'." % os.path.abspath(download_path))
 
         if extract:
             unpack(download_path, directory)
