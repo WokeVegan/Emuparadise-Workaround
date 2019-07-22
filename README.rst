@@ -7,8 +7,17 @@ Emuparadise Workaround is a command-line tool written in Python that allows you 
 Requirements
 ************
 - Python 3.6+
-- See requirements.txt for required python packages
-- 7zip (optional); if you have 7zip installed, you can extract .7z files with -e
+
+- Python Packages
+
+    - Required
+
+        - **requests**
+
+    - Optional
+
+        - **libarchive** - Allows you to extract .7z files.
+        - **bs4** - Used for scraping game images.
 
 Commands
 ********
@@ -25,7 +34,7 @@ Commands
 
     .. code-block:: text
 
-        python emuw.py search [-p] keywords [...]
+        python emuw.py search [-p] [keywords ...]
 
 
     **Positional Arguments**
