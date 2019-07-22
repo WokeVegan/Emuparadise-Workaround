@@ -42,7 +42,7 @@ if __name__ == '__main__':
             if args.directory:
                 directory = args.directory
             for x in args.id:
-                tools.download(x, args.directory, args.extract, args.scrap)
+                tools.download(x, args.directory, args.extract)
         else:
             download_parser.print_help()
 
