@@ -9,12 +9,6 @@ import requests
 from src import path
 
 try:
-    import bs4
-    IMPORTED_BS4 = True
-except ModuleNotFoundError:
-    IMPORTED_BS4 = False
-
-try:
     import libarchive.public
     IMPORTED_LIBARCHIVE = True
 except ModuleNotFoundError:
@@ -181,7 +175,7 @@ def get_title_by_gid(gid):
     return None
 
 
-def download(gid, directory=None, extract=False, scrap_images=False):
+def download(gid, directory=None, extract=False):
     """ attempt to download rom """
     if not directory:
         directory = path.get_default_directory(get_platform_by_gid(gid))
@@ -225,8 +219,6 @@ def download(gid, directory=None, extract=False, scrap_images=False):
 
         if extract:
             unpack(download_path, directory)
-        if scrap_images:
-            download_images(gid, directory)
 
 
 def search(keywords, show_platform=False):
