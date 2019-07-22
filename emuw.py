@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = 'Version 1.2'
+__version__ = 'Version 1.3'
 
 import argparse
 from src import tools
