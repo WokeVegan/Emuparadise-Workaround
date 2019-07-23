@@ -51,12 +51,12 @@ Commands
 
     .. code-block:: text
 
-        python emuw.py download [-d] [-e] [-s] id
+        python emuw.py download [-d] [-e] [-s] [id ...]
 
 
     **Positional Arguments**
 
-    -id  ID of the ROM provided from the search command.
+    -id  ID of the ROM/ROMs provided from the search command.
 
     **Optional Arguments**
 
