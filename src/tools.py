@@ -5,7 +5,6 @@ import shutil
 import urllib.parse
 import time
 import requests
-import json
 
 from src import path
 
@@ -21,7 +20,6 @@ _GAME_LINK = "https://www.emuparadise.me/roms/get-download.php?gid=%s&test=true"
 _SIZES = {1000000000: "{:1.2f}GB", 1000000: "{0:02.2f}MB", 1000: "{:02.2f}KB", 0: "{:02d}B"}
 _IMAGE_DATABASE_URL = "https://r.mprd.se/media/images"
 _EMUPARADISE_URL = "https://www.emuparadise.me"
-_PLATFORM_NAMES = json.load(open(path.PLATFORM_NAMES_PATH, encoding='utf-8'))
 _STYLE_SETTINGS = path.get_style_settings()
 _DEFAULT_COLOR = _STYLE_SETTINGS.get('default_color')
 _PLATFORM_COLOR = _STYLE_SETTINGS.get('platform_color')

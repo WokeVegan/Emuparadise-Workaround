@@ -4,7 +4,6 @@ import configparser
 _ROOT = os.path.expanduser('~')
 _CONFIG_PATH = os.path.join(_ROOT, '.config', 'Emuparadise-Workaround.cfg')
 DATABASE_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "database")
-PLATFORM_NAMES_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "platforms.json")
 
 
 def get_list_platforms():
