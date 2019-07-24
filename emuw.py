@@ -5,6 +5,7 @@ from src import tools
 from src import path
 
 if __name__ == '__main__':
+    path.create_settings_template()
     parser = argparse.ArgumentParser(description='Allows you to search and download ROMs from Emuparadise.')
     parser.add_argument('-d', '--default-rom-directory', nargs='*', help='Sets the default directory games will be saved to.')
     parser.set_defaults(action=None)
