@@ -5,7 +5,7 @@ import shutil
 import urllib.parse
 import time
 import requests
-
+import json
 from src import path
 
 try:
@@ -95,24 +95,28 @@ def check_bad_id(filename, gid):
 def get_platform_by_gid(gid):
     """ search for gid in database and return the platform it's contained in """
     for filename in os.listdir(path.DATABASE_PATH):
+        with open(os.path.join(path.DATABASE_PATH, filename), encoding='utf-8') as f:
+            database = json.load(f)
+        f.close()
+
         name, extension = os.path.splitext(filename)
         current_platform = name.lower()
-        with open(os.path.join(path.DATABASE_PATH, filename), 'r') as f:
-            for x in f.readlines():
-                if int(gid) == int(x.split('/')[0]):
-                    return current_platform
-            f.close()
+        for key in database.keys():
+            if str(gid) == key:
+                return current_platform
     return None
 
 
 def get_title_by_gid(gid):
     """ search for gid in database and return the platform it's contained in """
     for filename in os.listdir(path.DATABASE_PATH):
-        with open(os.path.join(path.DATABASE_PATH, filename), 'r') as f:
-            for x in f.readlines():
-                if int(gid) == int(x.split('/')[0]):
-                    return x.split('/')[1]
-            f.close()
+        with open(os.path.join(path.DATABASE_PATH, filename), encoding='utf-8') as f:
+            database = json.load(f)
+        f.close()
+
+        for key, value in database.items():
+            if str(gid) == key:
+                return value
     return None
 
 
@@ -127,13 +131,11 @@ def download(gid, directory=None, extract=False):
     download_path = os.path.join(directory, filename)
     check_bad_id(filename, gid)
 
-    install = True
-
     if os.path.exists(download_path):
         question = f"'{os.path.abspath(download_path)}' already exists.\nOverwrite the file? [y/n] "
         overwrite = input(question)
         if overwrite.lower() != 'y':
-            install = False
+            return
 
     if not os.path.isdir(directory):
         question = f"'{directory}' doesnt exists yet.\nCreate the directory? [y/n] "
@@ -141,42 +143,41 @@ def download(gid, directory=None, extract=False):
         if create_dir.lower() == 'y':
             os.makedirs(directory)
         else:
-            install = False
+            return
 
-    if install:
-        print("\nDownloading '%s'." % filename)
-        start_time = time.time()
-        total_size = int(response.headers.get('content-length'))
-        current_size = 0
+    print("\nDownloading '%s'." % filename)
+    start_time = time.time()
+    total_size = int(response.headers.get('content-length'))
+    current_size = 0
 
-        with open(download_path, 'wb') as f:
-            for block in response.iter_content(1024**2):
-                f.write(block)
-                current_size += len(block)
-                progress_bar = get_progress_bar(current_size, total_size, start_time)
-                print(progress_bar, end="")
-            f.close()
-            print("\nFile saved to '%s'." % os.path.abspath(download_path))
+    with open(download_path, 'wb') as f:
+        for block in response.iter_content(1024**2):
+            f.write(block)
+            current_size += len(block)
+            progress_bar = get_progress_bar(current_size, total_size, start_time)
+            print(progress_bar, end="")
+        f.close()
+        print("\nFile saved to '%s'." % os.path.abspath(download_path))
 
-        if extract:
-            unpack(download_path, directory)
+    if extract:
+        unpack(download_path, directory)
 
 
 def search(keywords, show_platform=False):
     """ prints all matching games """
-    database = []
-    for platform in os.listdir(path.DATABASE_PATH):
-        with open(os.path.join(path.DATABASE_PATH, platform), encoding='utf-8') as f:
-            for x in f.readlines():
-                line = x.strip('\n')
-                platform_string = platform.strip('.txt')
-                database.append(f"{platform_string}/{line}")
+    matches = []
 
-    matches = sorted([x for x in database if all([key.lower() in x.lower() for key in keywords])])
+    for filename in os.listdir(path.DATABASE_PATH):
+        with open(os.path.join(path.DATABASE_PATH, filename), encoding='utf-8') as f:
+            for key, value in json.load(f).items():
+                string = f"{os.path.splitext(filename)[0]}/{key}/{value}"
+                if all([keyword.lower() in string.lower() for keyword in keywords]):
+                    matches.append(string)
+        f.close()
 
     print(f"\n{len(matches)} results found...\n")
 
-    for game in matches:
+    for game in sorted(matches):
         platform, gid, title = game.split('/')
         gid = f"{_GAME_ID_COLOR}{' ' * (6 - len(gid))}{gid}{_DEFAULT_COLOR}"
         platform = f"{_PLATFORM_COLOR}{platform}{_DEFAULT_COLOR}"
