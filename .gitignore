@@ -1,4 +1,3 @@
-.idea/
-venv
+.idea
 exclude
-*.cfg
+Emuparadise-Workaround.cfg
