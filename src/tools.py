@@ -6,6 +6,8 @@ import urllib.parse
 import time
 import requests
 import json
+import bs4
+import re
 from src import path
 
 try:
@@ -85,6 +87,21 @@ def get_size_label(size):
                 return value.format(size)
 
 
+def get_dreamcast_link(url):
+    links = []
+    html = requests.get("https://www.emuparadise.me/Sega_Dreamcast_ISOs/Illbleed_(USA)/77").text
+    soup = bs4.BeautifulSoup(html, "html.parser")
+
+    for file in soup.find_all("div", class_="download-link"):
+        for x in file.find_all('p'):
+            title = x.find('a')['title']
+            filename = re.search("Download (.+?) ISO", title)
+            filename = filename.group(1)
+            link = "http://50.7.92.186/happyxhJ1ACmlTrxJQpol71nBc/Dreamcast/" + filename
+            links.append(link)
+    return links
+
+
 def check_bad_id(filename, gid):
     """ exit if download link is bad """
     if filename == _BAD_FILENAME % gid:
@@ -125,42 +142,57 @@ def download(gid, directory=None, extract=False):
     if not directory:
         directory = path.get_default_directory(get_platform_by_gid(gid))
 
-    response = requests.get(_GAME_LINK % gid, headers={"referer": _GAME_LINK % gid}, stream=True)
-    decoded_url = urllib.parse.unquote(response.url)
-    filename = decoded_url.split('/')[-1]
-    download_path = os.path.join(directory, filename)
-    check_bad_id(filename, gid)
+    game_links = []
+    platform = get_platform_by_gid(gid)
+    if platform == 'dreamcast':
+        with open(os.path.join(path.DATABASE_PATH, 'Dreamcast.json'), encoding='utf-8') as f:
+            database = json.load(f)
+            for key, value in database.items():
+                if str(gid) == key:
+                    game_link = get_dreamcast_link(value['link'])
+                    for x in game_link:
+                        game_links.append([x, {"referer": x}])
+    else:
+        game_links.append([_GAME_LINK % gid, {"referer": _GAME_LINK % gid}])
+#        response = requests.get(_GAME_LINK % gid, headers={"referer": _GAME_LINK % gid}, stream=True)
 
-    if os.path.exists(download_path):
-        question = f"'{os.path.abspath(download_path)}' already exists.\nOverwrite the file? [y/n] "
-        overwrite = input(question)
-        if overwrite.lower() != 'y':
-            return
+    for game_link in game_links:
+        response = requests.get(game_link[0], headers=game_link[1], stream=True)
+        decoded_url = urllib.parse.unquote(response.url)
+        filename = decoded_url.split('/')[-1]
+        download_path = os.path.join(directory, filename)
+        check_bad_id(filename, gid)
 
-    if not os.path.isdir(directory):
-        question = f"'{directory}' doesnt exists yet.\nCreate the directory? [y/n] "
-        create_dir = input(question)
-        if create_dir.lower() == 'y':
-            os.makedirs(directory)
-        else:
-            return
+        if os.path.exists(download_path):
+            question = f"'{os.path.abspath(download_path)}' already exists.\nOverwrite the file? [y/n] "
+            overwrite = input(question)
+            if overwrite.lower() != 'y':
+                return
 
-    print("\nDownloading '%s'." % filename)
-    start_time = time.time()
-    total_size = int(response.headers.get('content-length'))
-    current_size = 0
+        if not os.path.isdir(directory):
+            question = f"'{directory}' doesnt exists yet.\nCreate the directory? [y/n] "
+            create_dir = input(question)
+            if create_dir.lower() == 'y':
+                os.makedirs(directory)
+            else:
+                return
 
-    with open(download_path, 'wb') as f:
-        for block in response.iter_content(1024**2):
-            f.write(block)
-            current_size += len(block)
-            progress_bar = get_progress_bar(current_size, total_size, start_time)
-            print(progress_bar, end="")
-        f.close()
-        print("\nFile saved to '%s'." % os.path.abspath(download_path))
+        print("\nDownloading '%s'." % filename)
+        start_time = time.time()
+        total_size = int(response.headers.get('content-length'))
+        current_size = 0
 
-    if extract:
-        unpack(download_path, directory)
+        with open(download_path, 'wb') as f:
+            for block in response.iter_content(1024**2):
+                f.write(block)
+                current_size += len(block)
+                progress_bar = get_progress_bar(current_size, total_size, start_time)
+                print(progress_bar, end="")
+            f.close()
+            print("\nFile saved to '%s'." % os.path.abspath(download_path))
+
+        if extract:
+            unpack(download_path, directory)
 
 
 def search(keywords, show_platform=False):
@@ -170,9 +202,14 @@ def search(keywords, show_platform=False):
     for filename in os.listdir(path.DATABASE_PATH):
         with open(os.path.join(path.DATABASE_PATH, filename), encoding='utf-8') as f:
             for key, value in json.load(f).items():
-                string = f"{os.path.splitext(filename)[0]}/{key}/{value}"
-                if all([keyword.lower() in string.lower() for keyword in keywords]):
-                    matches.append(string)
+                if filename == "Dreamcast.json":
+                    string = f"{os.path.splitext(filename)[0]}/{key}/{value['title']}"
+                    if all([keyword.lower() in string.lower() for keyword in keywords]):
+                        matches.append(string)
+                else:
+                    string = f"{os.path.splitext(filename)[0]}/{key}/{value}"
+                    if all([keyword.lower() in string.lower() for keyword in keywords]):
+                        matches.append(string)
         f.close()
 
     print(f"\n{len(matches)} results found...\n")
