@@ -13,6 +13,7 @@ Requirements
     - Required
 
         - **requests**
+        - **bs4**
 
     - Optional
 
