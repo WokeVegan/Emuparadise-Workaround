@@ -22,10 +22,18 @@ _GAME_LINK = "https://www.emuparadise.me/roms/get-download.php?gid=%s&test=true"
 _SIZES = {1000000000: "{:1.2f}GB", 1000000: "{0:02.2f}MB", 1000: "{:02.2f}KB", 0: "{:02d}B"}
 _IMAGE_DATABASE_URL = "https://r.mprd.se/media/images"
 _EMUPARADISE_URL = "https://www.emuparadise.me"
-_STYLE_SETTINGS = path.get_style_settings()
-_DEFAULT_COLOR = _STYLE_SETTINGS.get('default_color')
-_PLATFORM_COLOR = _STYLE_SETTINGS.get('platform_color')
-_GAME_ID_COLOR = _STYLE_SETTINGS.get('game_id_color')
+_STYLE_SETTINGS = None
+_DEFAULT_COLOR = None
+_PLATFORM_COLOR = None
+_GAME_ID_COLOR = None
+
+
+def initialize():
+    global _STYLE_SETTINGS, _DEFAULT_COLOR, _PLATFORM_COLOR, _GAME_ID_COLOR
+    _STYLE_SETTINGS = path.get_style_settings()
+    _DEFAULT_COLOR = _STYLE_SETTINGS.get('default_color')
+    _PLATFORM_COLOR = _STYLE_SETTINGS.get('platform_color')
+    _GAME_ID_COLOR = _STYLE_SETTINGS.get('game_id_color')
 
 
 def unpack(filename, directory):
