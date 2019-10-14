@@ -20,7 +20,7 @@ _OCCUPIED_SPACE = 38
 _BAD_FILENAME = "get-download.php?gid=%s&test=true"
 _GAME_LINK = "https://www.emuparadise.me/roms/get-download.php?gid=%s&test=true"
 _SIZES = {1000000000: "{:1.2f}GB", 1000000: "{0:02.2f}MB", 1000: "{:02.2f}KB", 0: "{:02d}B"}
-_IMAGE_DATABASE_URL = "https://r.mprd.se/media/images"
+# _IMAGE_DATABASE_URL = "https://r.mprd.se/media/images"
 _EMUPARADISE_URL = "https://www.emuparadise.me"
 _STYLE_SETTINGS = None
 _DEFAULT_COLOR = None
@@ -39,8 +39,7 @@ def initialize():
 def unpack(filename, directory):
     """ unpacks archive files """
     file_path = os.path.join(directory, filename)
-    folder_name = os.path.splitext(filename)[0]
-    folder_path = os.path.join(directory, folder_name)
+    folder_path = os.path.join(directory, os.path.splitext(filename)[0])
 
     if not os.path.exists(folder_path):
         os.mkdir(folder_path)
@@ -97,7 +96,7 @@ def get_size_label(size):
 
 def get_dreamcast_link(url):
     links = []
-    html = requests.get("https://www.emuparadise.me/Sega_Dreamcast_ISOs/Illbleed_(USA)/77").text
+    html = requests.get(url).text
     soup = bs4.BeautifulSoup(html, "html.parser")
 
     for file in soup.find_all("div", class_="download-link"):
@@ -152,7 +151,7 @@ def download(gid, directory=None, extract=False):
 
     game_links = []
     platform = get_platform_by_gid(gid)
-    if platform == 'dreamcast':
+    if platform.lower() == 'dreamcast':
         with open(os.path.join(path.DATABASE_PATH, 'Dreamcast.json'), encoding='utf-8') as f:
             database = json.load(f)
             for key, value in database.items():
@@ -162,7 +161,6 @@ def download(gid, directory=None, extract=False):
                         game_links.append([x, {"referer": x}])
     else:
         game_links.append([_GAME_LINK % gid, {"referer": _GAME_LINK % gid}])
-#        response = requests.get(_GAME_LINK % gid, headers={"referer": _GAME_LINK % gid}, stream=True)
 
     for game_link in game_links:
         response = requests.get(game_link[0], headers=game_link[1], stream=True)
