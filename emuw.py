@@ -22,6 +22,7 @@ if __name__ == '__main__':
     download_parser.add_argument('id', nargs="+", help='ID of the ROM provided from the search command.')
     download_parser.add_argument('-d', '--directory', help='The ROMs save directory. (overrides default directory)')
     download_parser.add_argument('-e', '--extract', action='store_true', help='Attempt to extract the contents after downloading.')
+    download_parser.add_argument('-c', '--chunk-size', type=int, help='Changes download chunk size.')
     download_parser.set_defaults(action='download')
 
     args = parser.parse_args()
@@ -44,7 +45,11 @@ if __name__ == '__main__':
             if args.directory:
                 directory = args.directory
             for x in args.id:
-                tools.download(x, args.directory, args.extract)
+                if args.chunk_size:
+                    chunk_size = args.chunk_size
+                else:
+                    chunk_size = 1024**2
+                tools.download(x, args.directory, args.extract, chunk_size=chunk_size)
         else:
             download_parser.print_help()
 

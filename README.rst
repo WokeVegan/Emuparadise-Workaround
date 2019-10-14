@@ -65,4 +65,6 @@ Commands
 
     -e, --extract  Attempt to extract the contents after downloading.
 
+    -c, --chunk-size  Changes chunk size for downloads. (default: 1048576)
+
     This downloads the specified game. You can choose to install it in a specific directory or extract the files.

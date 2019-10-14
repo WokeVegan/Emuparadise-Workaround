@@ -144,7 +144,7 @@ def get_title_by_gid(gid):
     return None
 
 
-def download(gid, directory=None, extract=False):
+def download(gid, directory=None, extract=False, chunk_size=1024**2):
     """ attempt to download rom """
     if not directory:
         directory = path.get_default_directory(get_platform_by_gid(gid))
@@ -189,7 +189,7 @@ def download(gid, directory=None, extract=False):
         current_size = 0
 
         with open(download_path, 'wb') as f:
-            for block in response.iter_content(1024**2):
+            for block in response.iter_content(chunk_size):
                 f.write(block)
                 current_size += len(block)
                 progress_bar = get_progress_bar(current_size, total_size, start_time)
