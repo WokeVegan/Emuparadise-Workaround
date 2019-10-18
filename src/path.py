@@ -2,7 +2,11 @@ import os
 import configparser
 
 _ROOT = os.path.expanduser('~')
+
 _CONFIG_PATH = os.path.join(_ROOT, '.config', 'Emuparadise-Workaround.cfg')
+if os.name == 'nt':
+    _CONFIG_PATH = os.path.join(_ROOT, 'Emuparadise-Workaround.cfg')
+
 DATABASE_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "database")
 
 

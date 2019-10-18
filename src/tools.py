@@ -17,6 +17,9 @@ except ModuleNotFoundError:
     IMPORTED_LIBARCHIVE = False
 
 _OCCUPIED_SPACE = 38
+if os.name == 'nt':
+    _OCCUPIED_SPACE = 39
+
 _BAD_FILENAME = "get-download.php?gid=%s&test=true"
 _GAME_LINK = "https://www.emuparadise.me/roms/get-download.php?gid=%s&test=true"
 _SIZES = {1000000000: "{:1.2f}GB", 1000000: "{0:02.2f}MB", 1000: "{:02.2f}KB", 0: "{:02d}B"}
@@ -222,8 +225,12 @@ def search(keywords, show_platform=False):
 
     for game in sorted(matches):
         platform, gid, title = game.split('/')
-        gid = f"{_GAME_ID_COLOR}{' ' * (6 - len(gid))}{gid}{_DEFAULT_COLOR}"
-        platform = f"{_PLATFORM_COLOR}{platform}{_DEFAULT_COLOR}"
+        if os.name == 'nt':
+            gid = f"{' ' * (6 - len(gid))}{gid} "
+            
+        else:
+            gid = f"{_GAME_ID_COLOR}{' ' * (6 - len(gid))}{gid}{_DEFAULT_COLOR}"
+            platform = f"{_PLATFORM_COLOR}{platform}{_DEFAULT_COLOR}"
 
         if show_platform:
             print(f"{gid}[{platform}] {title}")
