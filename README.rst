@@ -68,3 +68,22 @@ Commands
     -c, --chunk-size  Changes chunk size for downloads. (default: 1048576)
 
     This downloads the specified game. You can choose to install it in a specific directory or extract the files.
+
+
+- Queue
+
+    This allows you to add games to a queue then download them all at once.
+
+    **Optional Arguments**
+
+    -a, --append  Adds all the IDs listed to the queue. This won't add duplicate entries or IDs of games that don't
+        exist.
+
+    -r, --remove  Removes the listed IDs from the queue.
+
+    -c, --clear  Clears the queue.
+
+    -l, --list  Lists all the titles in the queue.
+
+    -d, --download  Starts downloading all the games in the queue. This will automatically remove it from the queue
+        after the download is finished.

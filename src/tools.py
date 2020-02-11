@@ -16,27 +16,31 @@ try:
 except ModuleNotFoundError:
     IMPORTED_LIBARCHIVE = False
 
-_OCCUPIED_SPACE = 38
+
 if os.name == 'nt':
     _OCCUPIED_SPACE = 39
+else:
+    _OCCUPIED_SPACE = 38
 
 _BAD_FILENAME = "get-download.php?gid=%s&test=true"
 _GAME_LINK = "https://www.emuparadise.me/roms/get-download.php?gid=%s&test=true"
 _SIZES = {1000000000: "{:1.2f}GB", 1000000: "{0:02.2f}MB", 1000: "{:02.2f}KB", 0: "{:02d}B"}
-# _IMAGE_DATABASE_URL = "https://r.mprd.se/media/images"
 _EMUPARADISE_URL = "https://www.emuparadise.me"
 _STYLE_SETTINGS = None
 _DEFAULT_COLOR = None
 _PLATFORM_COLOR = None
 _GAME_ID_COLOR = None
+_INITIALIZED = False
 
 
 def initialize():
-    global _STYLE_SETTINGS, _DEFAULT_COLOR, _PLATFORM_COLOR, _GAME_ID_COLOR
+    global _STYLE_SETTINGS, _DEFAULT_COLOR, _PLATFORM_COLOR, _GAME_ID_COLOR, _INITIALIZED
+    path.create_settings_template()
     _STYLE_SETTINGS = path.get_style_settings()
     _DEFAULT_COLOR = _STYLE_SETTINGS.get('default_color')
     _PLATFORM_COLOR = _STYLE_SETTINGS.get('platform_color')
     _GAME_ID_COLOR = _STYLE_SETTINGS.get('game_id_color')
+    _INITIALIZED = True
 
 
 def unpack(filename, directory):
@@ -98,6 +102,7 @@ def get_size_label(size):
 
 
 def get_dreamcast_link(url):
+    """ this is a temporary workaround to get dreamcast links. """
     links = []
     html = requests.get(url).text
     soup = bs4.BeautifulSoup(html, "html.parser")
@@ -134,7 +139,7 @@ def get_platform_by_gid(gid):
     return None
 
 
-def get_title_by_gid(gid):
+def get_name_by_gid(gid):
     """ search for gid in database and return the platform it's contained in """
     for filename in os.listdir(path.DATABASE_PATH):
         with open(os.path.join(path.DATABASE_PATH, filename), encoding='utf-8') as f:
@@ -144,11 +149,14 @@ def get_title_by_gid(gid):
         for key, value in database.items():
             if str(gid) == key:
                 return value
-    return None
+    return
 
 
 def download(gid, directory=None, extract=False, chunk_size=1024**2):
     """ attempt to download rom """
+
+    _check_if_initialized()
+
     if not directory:
         directory = path.get_default_directory(get_platform_by_gid(gid))
 
@@ -204,19 +212,25 @@ def download(gid, directory=None, extract=False, chunk_size=1024**2):
             unpack(download_path, directory)
 
 
+def _check_if_initialized():
+    assert _INITIALIZED is True, "tools have not been initialized yet. try calling tools.initialize()"
+
+
 def search(keywords, show_platform=False):
     """ prints all matching games """
+    _check_if_initialized()
+
     matches = []
 
     for filename in os.listdir(path.DATABASE_PATH):
         with open(os.path.join(path.DATABASE_PATH, filename), encoding='utf-8') as f:
             for key, value in json.load(f).items():
                 if filename == "Dreamcast.json":
-                    string = f"{os.path.splitext(filename)[0]}/{key}/{value['title']}"
+                    string = f"{os.path.splitext(filename)[0]};{key};{value['title']}"
                     if all([keyword.lower() in string.lower() for keyword in keywords]):
                         matches.append(string)
                 else:
-                    string = f"{os.path.splitext(filename)[0]}/{key}/{value}"
+                    string = f"{os.path.splitext(filename)[0]};{key};{value}"
                     if all([keyword.lower() in string.lower() for keyword in keywords]):
                         matches.append(string)
         f.close()
@@ -224,7 +238,8 @@ def search(keywords, show_platform=False):
     print(f"\n{len(matches)} results found...\n")
 
     for game in sorted(matches):
-        platform, gid, title = game.split('/')
+
+        platform, gid, title = game.split(';')
         if os.name == 'nt':
             gid = f"{' ' * (6 - len(gid))}{gid} "
             
