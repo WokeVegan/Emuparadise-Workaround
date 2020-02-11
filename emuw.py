@@ -66,15 +66,15 @@ if __name__ == '__main__':
         else:
             download_parser.print_help()
     elif args.action == 'queue':
-        if args.append_queue:
+        if args.append:
             queue.add_to_queue(args.append_queue)
-        elif args.remove_queue:
+        elif args.remove:
             queue.remove_from_queue(args.remove_queue)
-        elif args.clear_queue:
+        elif args.clear:
             queue.clear_queue()
-        elif args.list_queue:
+        elif args.list:
             queue.list_queue()
-        elif args.download_queue:
+        elif args.download:
             queue.download_queue()
         else:
             queue_parser.print_help()
