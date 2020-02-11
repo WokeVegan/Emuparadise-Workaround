@@ -33,7 +33,7 @@ if __name__ == '__main__':
     queue_parser.add_argument('-c', '--clear', action='store_true', help='Removes all IDs from the queue.')
     queue_parser.add_argument('-l', '--list', action='store_true', help='Lists all titles in the queue.')
     queue_parser.add_argument('-d', '--download', action='store_true', help='Starts the download queue.')
-    download_parser.set_defaults(action='queue')
+    queue_parser.set_defaults(action='queue')
 
     args = parser.parse_args()
 
@@ -67,9 +67,9 @@ if __name__ == '__main__':
             download_parser.print_help()
     elif args.action == 'queue':
         if args.append:
-            queue.add_to_queue(args.append_queue)
+            queue.add_to_queue(args.append)
         elif args.remove:
-            queue.remove_from_queue(args.remove_queue)
+            queue.remove_from_queue(args.remove)
         elif args.clear:
             queue.clear_queue()
         elif args.list:
