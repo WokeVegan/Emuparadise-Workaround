@@ -1,36 +1,30 @@
-import configparser
 from src import tools
 from src import path
 
 
 def add_to_queue(ids):
-    config = configparser.ConfigParser()
-    config.read(path.CONFIG_PATH, encoding='utf-8')
+    config = path.get_config()
     queue = config['QUEUE']['ids'].split(';')
     for gid in config['QUEUE']['ids'].split(';') + ids:
         if gid not in queue:
             name = tools.get_name_by_gid(gid)
-            if gid in ids and name:
+            if gid in ids and name is not None:
                 print(f"Added {name} to queue.")
                 tools.get_name_by_gid(gid)
-            queue.append(gid)
+                queue.append(gid)
     config['QUEUE']['ids'] = ';'.join(queue)
-    with open(path.CONFIG_PATH, 'w', encoding='utf-8') as f:
-        config.write(f)
+    path.write_config(config)
 
 
 def clear_queue():
-    config = configparser.ConfigParser()
-    config.read(path.CONFIG_PATH, encoding='utf-8')
+    config = path.get_config()
     config['QUEUE']['ids'] = ''
+    path.write_config(config)
     print('Download queue was cleared.')
-    with open(path.CONFIG_PATH, 'w', encoding='utf-8') as f:
-        config.write(f)
 
 
 def remove_from_queue(ids):
-    config = configparser.ConfigParser()
-    config.read(path.CONFIG_PATH, encoding='utf-8')
+    config = path.get_config()
     queue = []
     for gid in config['QUEUE']['ids'].split(';'):
         if gid not in ids:
@@ -39,13 +33,11 @@ def remove_from_queue(ids):
             if tools.get_name_by_gid(gid):
                 print(f"Removed {tools.get_name_by_gid(gid)} from the queue.")
     config['QUEUE']['ids'] = ';'.join(queue)
-    with open(path.CONFIG_PATH, 'w', encoding='utf-8') as f:
-        config.write(f)
+    path.write_config(config)
 
 
 def download_queue():
-    config = configparser.ConfigParser()
-    config.read(path.CONFIG_PATH, encoding='utf-8')
+    config = path.get_config()
     for gid in config['QUEUE']['ids'].split(';'):
         if gid:
             tools.download(int(gid))
@@ -53,8 +45,8 @@ def download_queue():
 
 
 def list_queue():
-    config = configparser.ConfigParser()
-    config.read(path.CONFIG_PATH, encoding='utf-8')
+    config = path.get_config()
     for gid in config['QUEUE']['ids'].split(';'):
         if gid:
-            print(tools.get_name_by_gid(gid))
+            gid = f"{' ' * (6 - len(gid))}{gid} "
+            print(gid, tools.get_name_by_gid(gid))

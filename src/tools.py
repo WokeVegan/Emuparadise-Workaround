@@ -33,6 +33,11 @@ _GAME_ID_COLOR = None
 _INITIALIZED = False
 
 
+def format_gid(gid):
+    """ formats ids by removing leading 0s. """
+    return str(int(gid))
+
+
 def initialize():
     global _STYLE_SETTINGS, _DEFAULT_COLOR, _PLATFORM_COLOR, _GAME_ID_COLOR, _INITIALIZED
     path.create_settings_template()
@@ -101,6 +106,13 @@ def get_size_label(size):
                 return value.format(size)
 
 
+def get_platforms():
+    platforms = []
+    for platform in os.listdir(path.DATABASE_PATH):
+        platforms.append(os.path.splitext(platform)[0])
+    return platforms
+
+
 def get_dreamcast_link(url):
     """ this is a temporary workaround to get dreamcast links. """
     links = []
@@ -119,7 +131,7 @@ def get_dreamcast_link(url):
 
 def check_bad_id(filename, gid):
     """ exit if download link is bad """
-    if filename == _BAD_FILENAME % gid:
+    if filename == _BAD_FILENAME % format_gid(gid):
         print("Failed to download due to bad ID.")
         raise SystemExit
 
@@ -134,7 +146,7 @@ def get_platform_by_gid(gid):
         name, extension = os.path.splitext(filename)
         current_platform = name.lower()
         for key in database.keys():
-            if str(gid) == key:
+            if str(format_gid(gid)) == key:
                 return current_platform
     return None
 
@@ -147,7 +159,7 @@ def get_name_by_gid(gid):
         f.close()
 
         for key, value in database.items():
-            if str(gid) == key:
+            if str(format_gid(gid)) == key:
                 return value
     return
 
@@ -156,6 +168,8 @@ def download(gid, directory=None, extract=False, chunk_size=1024**2):
     """ attempt to download rom """
 
     _check_if_initialized()
+
+    gid = format_gid(gid)
 
     if not directory:
         directory = path.get_default_directory(get_platform_by_gid(gid))
@@ -238,11 +252,12 @@ def search(keywords, show_platform=False):
     print(f"\n{len(matches)} results found...\n")
 
     for game in sorted(matches):
-
         platform, gid, title = game.split(';')
+        gid = format_gid(gid)
+
         if os.name == 'nt':
             gid = f"{' ' * (6 - len(gid))}{gid} "
-            
+
         else:
             gid = f"{_GAME_ID_COLOR}{' ' * (6 - len(gid))}{gid}{_DEFAULT_COLOR}"
             platform = f"{_PLATFORM_COLOR}{platform}{_DEFAULT_COLOR}"
