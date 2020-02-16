@@ -1,3 +1,3 @@
 .idea
-exclude
-Emuparadise-Workaround.cfg
+venv
+emuw.cfg

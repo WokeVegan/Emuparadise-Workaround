@@ -27,11 +27,12 @@ def remove_from_queue(ids):
     config = path.get_config()
     queue = []
     for gid in config['QUEUE']['ids'].split(';'):
-        if gid not in ids:
-            queue.append(gid)
-        else:
-            if tools.get_name_by_gid(gid):
-                print(f"Removed {tools.get_name_by_gid(gid)} from the queue.")
+        if gid:
+            if int(gid) not in ids:
+                queue.append(gid)
+            else:
+                if tools.get_name_by_gid(gid):
+                    print(f"Removed {tools.get_name_by_gid(gid)} from the queue.")
     config['QUEUE']['ids'] = ';'.join(queue)
     path.write_config(config)
 
@@ -41,7 +42,7 @@ def download_queue():
     for gid in config['QUEUE']['ids'].split(';'):
         if gid:
             tools.download(int(gid))
-            remove_from_queue(gid)
+            remove_from_queue([int(tools.format_gid(gid))])
 
 
 def list_queue():

@@ -10,26 +10,15 @@ import bs4
 import re
 from src import path
 
-try:
-    import libarchive.public
-    IMPORTED_LIBARCHIVE = True
-except ModuleNotFoundError:
-    IMPORTED_LIBARCHIVE = False
-
 
 if os.name == 'nt':
     _OCCUPIED_SPACE = 39
 else:
     _OCCUPIED_SPACE = 38
 
-_BAD_FILENAME = "get-download.php?gid=%s&test=true"
-_GAME_LINK = "https://www.emuparadise.me/roms/get-download.php?gid=%s&test=true"
+BAD_FILENAME = "get-download.php?gid=%s&test=true"
+GAME_LINK = "https://www.emuparadise.me/roms/get-download.php?gid=%s&test=true"
 _SIZES = {1000000000: "{:1.2f}GB", 1000000: "{0:02.2f}MB", 1000: "{:02.2f}KB", 0: "{:02d}B"}
-_EMUPARADISE_URL = "https://www.emuparadise.me"
-_STYLE_SETTINGS = None
-_DEFAULT_COLOR = None
-_PLATFORM_COLOR = None
-_GAME_ID_COLOR = None
 _INITIALIZED = False
 
 
@@ -39,46 +28,9 @@ def format_gid(gid):
 
 
 def initialize():
-    global _STYLE_SETTINGS, _DEFAULT_COLOR, _PLATFORM_COLOR, _GAME_ID_COLOR, _INITIALIZED
+    global _INITIALIZED
     path.create_settings_template()
-    _STYLE_SETTINGS = path.get_style_settings()
-    _DEFAULT_COLOR = _STYLE_SETTINGS.get('default_color')
-    _PLATFORM_COLOR = _STYLE_SETTINGS.get('platform_color')
-    _GAME_ID_COLOR = _STYLE_SETTINGS.get('game_id_color')
     _INITIALIZED = True
-
-
-def unpack(filename, directory):
-    """ unpacks archive files """
-    file_path = os.path.join(directory, filename)
-    folder_path = os.path.join(directory, os.path.splitext(filename)[0])
-
-    if not os.path.exists(folder_path):
-        os.mkdir(folder_path)
-
-    if IMPORTED_LIBARCHIVE:
-        with libarchive.public.file_reader(file_path) as e:
-            for entry in e:
-                current_size = 0
-                total_size = entry.size
-                filename = os.path.join(folder_path, entry.pathname)
-                start_time = time.time()
-                print(f"\nExtracting '{os.path.split(filename)[-1]}'.")
-
-                with open(filename, 'wb') as f:
-                    for block in entry.get_blocks():
-                        f.write(block)
-                        current_size += len(block)
-                        progress_bar = get_progress_bar(current_size, total_size, start_time)
-                        print(progress_bar, end="")
-                    f.close()
-            print(f"\nAll files extracted to '{folder_path}'.")
-    else:
-        try:
-            shutil.unpack_archive(filename, directory)
-        except shutil.ReadError:
-            extension = os.path.splitext(file_path)[1]
-            print(f"Cannot unpack '{extension}' files. Try installing libarchive.")
 
 
 def get_progress_bar(current_download, total_download, start_time):
@@ -113,27 +65,10 @@ def get_platforms():
     return platforms
 
 
-def get_dreamcast_link(url):
-    """ this is a temporary workaround to get dreamcast links. """
-    links = []
-    html = requests.get(url).text
-    soup = bs4.BeautifulSoup(html, "html.parser")
-
-    for file in soup.find_all("div", class_="download-link"):
-        for x in file.find_all('p'):
-            title = x.find('a')['title']
-            filename = re.search("Download (.+?) ISO", title)
-            filename = filename.group(1)
-            link = "http://50.7.92.186/happyxhJ1ACmlTrxJQpol71nBc/Dreamcast/" + filename
-            links.append(link)
-    return links
-
-
 def check_bad_id(filename, gid):
     """ exit if download link is bad """
-    if filename == _BAD_FILENAME % format_gid(gid):
-        print("Failed to download due to bad ID.")
-        raise SystemExit
+    if filename == BAD_FILENAME % format_gid(gid):
+        return 1
 
 
 def get_platform_by_gid(gid):
@@ -164,11 +99,8 @@ def get_name_by_gid(gid):
     return
 
 
-def download(gid, directory=None, extract=False, chunk_size=1024**2):
+def download(gid, directory=None):
     """ attempt to download rom """
-
-    _check_if_initialized()
-
     gid = format_gid(gid)
 
     if not directory:
@@ -181,11 +113,23 @@ def download(gid, directory=None, extract=False, chunk_size=1024**2):
             database = json.load(f)
             for key, value in database.items():
                 if str(gid) == key:
-                    game_link = get_dreamcast_link(value['link'])
-                    for x in game_link:
+
+                    links = []
+                    html = requests.get(value['link']).text
+                    soup = bs4.BeautifulSoup(html, "html.parser")
+
+                    for file in soup.find_all("div", class_="download-link"):
+                        for x in file.find_all('p'):
+                            title = x.find('a')['title']
+                            filename = re.search("Download (.+?) ISO", title)
+                            filename = filename.group(1)
+                            link = "http://50.7.92.186/happyxhJ1ACmlTrxJQpol71nBc/Dreamcast/" + filename
+                            links.append(link)
+
+                    for x in links:
                         game_links.append([x, {"referer": x}])
     else:
-        game_links.append([_GAME_LINK % gid, {"referer": _GAME_LINK % gid}])
+        game_links.append([GAME_LINK % gid, {"referer": GAME_LINK % gid}])
 
     for game_link in game_links:
         response = requests.get(game_link[0], headers=game_link[1], stream=True)
@@ -214,7 +158,7 @@ def download(gid, directory=None, extract=False, chunk_size=1024**2):
         current_size = 0
 
         with open(download_path, 'wb') as f:
-            for block in response.iter_content(chunk_size):
+            for block in response.iter_content(1024**2):
                 f.write(block)
                 current_size += len(block)
                 progress_bar = get_progress_bar(current_size, total_size, start_time)
@@ -222,20 +166,10 @@ def download(gid, directory=None, extract=False, chunk_size=1024**2):
             f.close()
             print("\nFile saved to '%s'." % os.path.abspath(download_path))
 
-        if extract:
-            unpack(download_path, directory)
-
-
-def _check_if_initialized():
-    assert _INITIALIZED is True, "tools have not been initialized yet. try calling tools.initialize()"
-
 
 def search(keywords, show_platform=False):
     """ prints all matching games """
-    _check_if_initialized()
-
     matches = []
-
     for filename in os.listdir(path.DATABASE_PATH):
         with open(os.path.join(path.DATABASE_PATH, filename), encoding='utf-8') as f:
             for key, value in json.load(f).items():
@@ -254,13 +188,7 @@ def search(keywords, show_platform=False):
     for game in sorted(matches):
         platform, gid, title = game.split(';')
         gid = format_gid(gid)
-
-        if os.name == 'nt':
-            gid = f"{' ' * (6 - len(gid))}{gid} "
-
-        else:
-            gid = f"{_GAME_ID_COLOR}{' ' * (6 - len(gid))}{gid}{_DEFAULT_COLOR}"
-            platform = f"{_PLATFORM_COLOR}{platform}{_DEFAULT_COLOR}"
+        gid = f"{' ' * (6 - len(gid))}{gid} "
 
         if show_platform:
             print(f"{gid}[{platform}] {title}")

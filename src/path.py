@@ -1,78 +1,65 @@
 import os
+import sys
 import configparser
 from src import tools
 
-if os.name == 'nt':
-    _CONFIG_PATH = os.path.join(os.path.expanduser('~'), 'Emuparadise-Workaround.cfg')
-else:
-    _CONFIG_PATH = os.path.join(os.path.expanduser('~'), '.config', 'Emuparadise-Workaround.cfg')
-
-DATABASE_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "database")
+CONFIG_PATH = os.path.join(os.path.dirname(sys.argv[0]), "emuw.cfg")
+DATABASE_PATH = os.path.join(os.path.dirname(sys.argv[0]), "database")
 
 
 def get_config():
     config = configparser.ConfigParser()
-    config.read(_CONFIG_PATH, encoding='utf-8')
+    config.read(CONFIG_PATH, encoding='utf-8')
     return config
 
 
 def write_config(config):
-    with open(_CONFIG_PATH, 'w', encoding='utf-8') as f:
+    with open(CONFIG_PATH, 'w', encoding='utf-8') as f:
         config.write(f)
+    f.close()
 
 
 def create_settings_template():
-    if not os.path.exists(_CONFIG_PATH):
-        config = configparser.ConfigParser()
+    if not os.path.exists(CONFIG_PATH):
+        config = get_config()
         config.add_section('DIRECTORY')
         for platform in tools.get_platforms():
-            config['DIRECTORY']['DEFAULT'] = str()
-            config['DIRECTORY'][str(platform)] = str()
-        config.add_section('STYLE')
-        config['STYLE']['default_color'] = '\033[0;32;37m'
-        config['STYLE']['platform_color'] = '\033[2;32;37m'
-        config['STYLE']['game_id_color'] = '\033[1;32;34m'
+            config['DIRECTORY']['DEFAULT'] = ''
+            config['DIRECTORY'][str(platform)] = ''
         config.add_section('QUEUE')
         config['QUEUE']['ids'] = ''
-        with open(_CONFIG_PATH, 'w', encoding='utf-8') as f:
-            config.write(f)
-        f.close()
-
-
-def get_style_settings():
-    config = configparser.ConfigParser()
-    config.read(_CONFIG_PATH, encoding='utf-8')
-    return dict(config.items('STYLE'))
+        write_config(config)
 
 
 def list_directories():
-    config = configparser.ConfigParser()
-    config.read(_CONFIG_PATH, encoding='utf-8')
+    """ lists all custom download directories """
+    config = get_config()
     for key, value in config.items('DIRECTORY'):
-        if value:
-            print(key, '=', value)
+        yield key, value
 
 
 def set_default_directory(directory, platform=None):
     """ changes the default download directory. """
-    config = configparser.ConfigParser()
-    config.read(_CONFIG_PATH, encoding='utf-8')
+    config = get_config()
+
     if platform is None:
         platform = 'default'
-    config['DIRECTORY'][platform] = directory
-    with open(_CONFIG_PATH, 'w', encoding='utf-8') as f:
-        config.write(f)
-    f.close()
 
-    print(f"Directory for '{platform}' has been set to '{directory}'.")
+    if any([platform.lower() == x.lower() for x in tools.get_platforms()]) or platform == 'default':
+        config['DIRECTORY'][platform.lower()] = directory
+        write_config(config)
+        print(f"Directory for '{platform.lower()}' has been set to '{directory}'.")
+    else:
+        print(f"'{platform.lower()}' does not exist.")
 
 
 def get_default_directory(platform=None):
     """ returns the default download directory. """
-    config = configparser.ConfigParser()
-    config.read(_CONFIG_PATH, encoding='utf-8')
+    config = get_config()
+
     if platform is None:
         platform = 'default'
+
     if config.get('DIRECTORY', platform):
         return config.get('DIRECTORY', platform)
     elif config.get('DIRECTORY', 'default'):
