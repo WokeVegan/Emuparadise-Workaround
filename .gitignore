@@ -1,3 +1,4 @@
 .idea
 venv
 emuw.cfg
+database/*.json_
