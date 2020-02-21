@@ -2,10 +2,10 @@ import configparser
 import os
 import sys
 
-from src import tools
+from emuw import tools
 
 CONFIG_PATH = os.path.join(os.path.dirname(sys.argv[0]), "emuw.cfg")
-DATABASE_PATH = os.path.join(os.path.dirname(sys.argv[0]), "database")
+DATABASE_PATH = os.path.join(os.path.dirname(sys.argv[0]), "database", "roms")
 
 
 def get_config():
@@ -29,17 +29,24 @@ def create_settings_template():
             config['DIRECTORY']['DEFAULT'] = ''
             config['DIRECTORY'][str(platform)] = ''
 
-        config.add_section('QUEUE')
-        config['QUEUE']['ids'] = ''
+        config.add_section('RPI')
+        config['RPI']['enabled'] = '0'
+        config['RPI']['IPAddress'] = ''
+
         write_config(config)
 
 
-def get_default_directory(platform=None):
+def get_default_directory(platform=None, rpi_enabled=False):
     """ returns the default download directory. """
     config = get_config()
-
     if platform is None:
         platform = 'default'
+
+    if rpi_enabled:
+        ip_address = config['RPI']['IPAddress']
+        if platform == 'default':
+            return f"//{ip_address}/ROMs"
+        return f"//{ip_address}/ROMs/{platform}"
 
     if config.get('DIRECTORY', platform):
         return config.get('DIRECTORY', platform)

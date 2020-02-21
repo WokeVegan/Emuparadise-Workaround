@@ -1,7 +1,7 @@
 import json
 import os
 
-from src import path
+from emuw import path
 
 BAD_FILENAME = "get-download.php?gid=%s&test=true"
 GAME_LINK = "https://www.emuparadise.me/roms/get-download.php?gid=%s&test=true"
@@ -54,7 +54,11 @@ def get_search_results(keywords, platform='All'):
         filename = platform + '.json'
         with open(os.path.join(path.DATABASE_PATH, filename), encoding='utf-8') as f:
             for key, value in json.load(f).items():
-                string = f"{os.path.splitext(filename)[0]};{key};{value}"
+                key = '%06d' % int(key)
+                if platform.lower() == 'dreamcast':
+                    string = f"{os.path.splitext(filename)[0]};{key};{value['title']}"
+                else:
+                    string = f"{os.path.splitext(filename)[0]};{key};{value}"
 
                 if keywords:
                     if all([keyword.lower() in string.lower() for keyword in keywords]):
@@ -64,9 +68,14 @@ def get_search_results(keywords, platform='All'):
         f.close()
     else:
         for filename in get_platforms():
+            platform = filename.strip('.json')
             with open(os.path.join(path.DATABASE_PATH, filename + '.json'), encoding='utf-8') as f:
                 for key, value in json.load(f).items():
-                    string = f"{os.path.splitext(filename)[0]};{key};{value}"
+                    key = '%06d' % int(key)
+                    if platform.lower() == 'dreamcast':
+                        string = f"{os.path.splitext(filename)[0]};{key};{value['title']}"
+                    else:
+                        string = f"{os.path.splitext(filename)[0]};{key};{value}"
                     if keywords:
                         if all([keyword.lower() in string.lower() for keyword in keywords]):
                             matches.append(string)

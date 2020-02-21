@@ -1,0 +1,28 @@
+{
+  "Game Boy Advance": {
+    "link": "http://162.210.194.49/happyxhJ1ACmlTrxJQpol71nBc/epforums/upload/2/3/4/5/2/265111740499005636.zip",
+    "md5": "a860e8c0b6d573d191e4ec7db1b1e4f6",
+    "rename-to": "gba_bios.bin"
+  },
+  "Playstation": {
+    "link": "http://the-eye.eu/public/rom/Bios/psx/scph7003.zip",
+    "md5": "490f666e1afb15b7362b406ed1cea246",
+    "rename-to": "scph5501.bin"
+  },
+  "3DO": {
+    "link": "http://the-eye.eu/public/rom/Bios/3do/Bios-3DO%20FZ-10%20Bios%20%281994%29.zip",
+    "md5": "51f2f43ae2f3508a14d9f56597e2d3ce",
+    "rename-to": "panafz10.bin"
+
+  },
+  "Atari 7800": {
+    "link": "https://www.romcollector.com/storage/emulators/mess/a7800.zip",
+    "md5": "0763f1ffb006ddbe32e52d497ee848ae",
+    "rename-to": "7800 BIOS (U).rom"
+  },
+  "Sega Genesis": {
+    "link": "https://segaretro.org/images/4/43/Us_scd1_921011.zip",
+    "md5": "2efd74e3232ff260e371b99f84024f7f",
+    "rename-to": "bios_CD_U.bin"
+  }
+}

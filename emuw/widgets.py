@@ -1,8 +1,8 @@
 from PyQt5 import QtCore
 from PyQt5 import QtWidgets
 
-from src import path
-from src import tools
+from emuw import path
+from emuw import tools
 
 
 class DirectorySettings(QtWidgets.QDialog):
@@ -12,7 +12,7 @@ class DirectorySettings(QtWidgets.QDialog):
 
         self.setWindowTitle("Directory Settings")
         self.setEnabled(True)
-        self.resize(355, 114)
+        self.resize(355, 130)
         self.setFixedSize(self.size())
 
         self.platform_list = QtWidgets.QComboBox(self)
@@ -30,41 +30,99 @@ class DirectorySettings(QtWidgets.QDialog):
         self.okay_cancel_buttons.accepted.connect(self.on_accept)
         self.okay_cancel_buttons.rejected.connect(self.on_reject)
 
+        self.rpi_config = QtWidgets.QCheckBox("RPI Mode", self)
+        self.rpi_config.stateChanged.connect(self.on_rpi_config_change)
+
+        self.rpi_ip = QtWidgets.QLineEdit(self)
+        self.rpi_ip.setPlaceholderText("RPI IP Address")
+        self.rpi_ip.setFixedWidth(100)
+        self.rpi_ip.setDisabled(True)
+
         self.grid_layout = QtWidgets.QGridLayout(self)
         self.grid_layout.addWidget(self.platform_list, 0, 0, 1, 2)
         self.grid_layout.addWidget(self.directory_label, 1, 0, 1, 1)
         self.grid_layout.addWidget(self.open_directory_button, 1, 1, 1, 1)
-        self.grid_layout.addWidget(self.okay_cancel_buttons, 2, 0, 1, 2)
+        self.grid_layout.addWidget(self.okay_cancel_buttons, 3, 0, 1, 2)
+        self.grid_layout.addWidget(self.rpi_config, 2, 0, 1, 1)
+        self.grid_layout.addWidget(self.rpi_ip, 3, 0, 1, 1)
+        self.changed_directories = {}
+        self.initialize()
 
+    def initialize(self):
         self.platform_list.addItem('Default')
-
         for platform in tools.get_platforms():
             self.platform_list.addItem(platform)
 
-        self.changed_directories = {}
+        config = path.get_config()
+        ip_address = config['RPI']['IPAddress']
+        is_enabled = bool(int(config['RPI']['enabled']))
+        self.rpi_ip.setText(ip_address)
 
-        self.on_combo_change()  # Updates the directory text
+        if is_enabled:
+            self.rpi_config.setChecked(True)
+            self.rpi_ip.setDisabled(False)
+            self.open_directory_button.setDisabled(True)
+        else:
+            self.rpi_config.setChecked(False)
+            self.rpi_ip.setDisabled(True)
+            self.open_directory_button.setDisabled(False)
+
+        self.on_combo_change()
+
+    def on_rpi_config_change(self):
+        if self.rpi_config.isChecked():
+            self.rpi_ip.setDisabled(False)
+            self.open_directory_button.setDisabled(True)
+        elif not self.rpi_config.isChecked():
+            self.rpi_ip.setDisabled(True)
+            self.open_directory_button.setDisabled(False)
+        self.on_combo_change()
 
     def on_combo_change(self):
-        if path.does_platform_have_path_set(self.platform_list.currentText()):
-            self.directory_label.setText(path.get_default_directory(self.platform_list.currentText()))
-        else:
-            self.directory_label.setPlaceholderText(path.get_default_directory(self.platform_list.currentText()))
+        if self.rpi_config.isChecked():
             self.directory_label.setText('')
+            self.directory_label.setPlaceholderText(path.get_default_directory(self.platform_list.currentText(), True))
+        else:
+            if path.does_platform_have_path_set(self.platform_list.currentText()):
+                self.directory_label.setText(path.get_default_directory(self.platform_list.currentText()))
+            else:
+                self.directory_label.setPlaceholderText(path.get_default_directory(self.platform_list.currentText()))
+                self.directory_label.setText('')
 
     def on_reject(self):
         self.close()
 
     def on_accept(self):
-        path.get_config()
-        self.directory_label.setText(path.get_default_directory(self.platform_list.currentText()))
-        config = path.get_config()
 
+        config = path.get_config()
+        can_close = True
+        config['RPI']['enabled'] = '0'
+        if self.rpi_config.isChecked():
+            if not self.rpi_ip.text():
+                can_close = False
+                QtWidgets.QMessageBox.about(None, "Emuparadise Workaround",
+                                            "No IP Address is set and RPI config is checked..")
+            else:
+                config['RPI']['enabled'] = '1'
+                config['RPI']['IPAddress'] = self.rpi_ip.text()
+                if not self.parent().rpi_connection(self.rpi_ip.text()):
+                    QtWidgets.QMessageBox.about(None, "Emuparadise Workaround", "RPI Mode is enabled, but cannot connect to IP Address.")
+                    can_close = False
+                if not self.parent().rpi_storage_thread.is_alive() and self.parent().rpi_connection():
+                    self.parent().rpi_storage_thread.start()
+
+        self.directory_label.setText(path.get_default_directory(self.platform_list.currentText()))
         for key, value in self.changed_directories.items():
             config['DIRECTORY'][key] = value
-
         path.write_config(config)
-        self.close()
+        rpi_enalbed = path.get_config().getboolean('RPI', 'enabled')
+        rpi_label = f"RPI ENABLED: {rpi_enalbed}"
+        if not self.parent().rpi_enabled.text() == rpi_enalbed:
+            self.parent().game_list.clear()
+        self.parent().rpi_enabled.setText(rpi_label)
+
+        if can_close:
+            self.close()
 
     def choose_path(self):
         directory = path.get_default_directory(self.platform_list.currentText())
@@ -126,15 +184,20 @@ class DownloadDialog(QtWidgets.QDialog):
         self.grid_layout.addWidget(self.size, 2, 1, 1, 2)
 
     def open(self):
-        path.get_default_directory()
         directory = path.get_default_directory(self.platform.text())
         filename = str(QtWidgets.QFileDialog.getExistingDirectory(self, 'Select a directory', directory))
 
         if filename:
             self.directory.setText(filename)
 
-    def setup(self, filename, size, platform, default_directory):
-        self.filename.setText(filename)
+    def setup(self, filenames, size, platform, default_directory):
+        self.filename.setText(', '.join(filenames))
         self.size.setText(size)
         self.platform.setText(platform)
-        self.directory.setPlaceholderText(default_directory)
+
+        if int(path.get_config()['RPI']['enabled']):
+            self.directory.setPlaceholderText(path.get_default_directory(self.platform.text(), True))
+            self.directory.setText('')
+            self.choose_directory_button.setDisabled(True)
+        else:
+            self.directory.setPlaceholderText(default_directory)
