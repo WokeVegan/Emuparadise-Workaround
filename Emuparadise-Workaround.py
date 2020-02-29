@@ -66,8 +66,6 @@ class EWMainWindow(QtWidgets.QMainWindow):
 
         self.progressBar = QtWidgets.QProgressBar(self.central_widget)
         self.progressBar.setEnabled(False)
-        self.progress_bars = [
-        ]
 
         self.game_list = QtWidgets.QListWidget(self.central_widget)
         self.game_list.setTabletTracking(False)
@@ -411,69 +409,6 @@ class EWMainWindow(QtWidgets.QMainWindow):
         self.search_box.setDisabled(False)
         self.search_button.setDisabled(False)
         self.updated.emit()
-
-    """
-    def on_download_OLD(self):
-
-
-
-
-        response = requests.get(game_link[0], headers=game_link[1], stream=True)
-        decoded_url = urllib.parse.unquote(response.url)
-        filename = decoded_url.split('/')[-1]
-        download_path = os.path.join(directory, filename)
-
-        if tools.check_bad_id(filename, gid):
-            return
-
-        size = tools.get_size_label(int(response.headers.get('content-length')))
-        download_widget = widgets.DownloadDialog()
-        download_widget.setup(filename, size, tools.get_platform_by_gid(gid), download_path)
-        answer = download_widget.exec_()
-
-        if answer == 0:
-            return
-
-        if download_widget.directory.text():
-            download_path = os.path.join(download_widget.directory.text(), filename)
-        else:
-            if path.get_config().getint('RPI', 'enabled'):
-                download_path = os.path.join(download_widget.directory.placeholderText(), filename)
-            else:
-                download_path = download_widget.directory.placeholderText()
-
-        if os.path.exists(download_path):
-            msg = QtWidgets.QMessageBox()
-            msg.setIcon(QtWidgets.QMessageBox.Information)
-            msg.setText(f"'{os.path.abspath(download_path)}' already exists.\nOverwrite the file?")
-            msg.setWindowTitle("Emuparadise Workaround")
-            msg.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
-            choice = msg.exec_()
-            if choice == QtWidgets.QMessageBox.No:
-                return
-
-        if not os.path.isdir(directory):
-            msg = QtWidgets.QMessageBox()
-            msg.setIcon(QtWidgets.QMessageBox.Information)
-            msg.setText(f"'{directory}' doesnt exists yet.\nCreate the directory?")
-            msg.setWindowTitle("Emuparadise Workaround")
-            msg.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
-            choice = msg.exec_()
-
-            if choice == QtWidgets.QMessageBox.Yes:
-                os.makedirs(directory)
-            else:
-                return
-
-        self.setEnabled(False)
-        self.cancel_button.setVisible(True)
-        self.download_button.setVisible(False)
-        thread = threading.Thread(target=self.download_thread, args=(response, download_path))
-        thread.start()
-
-        self.setEnabled(True)
-
-    """
 
     def download_complete(self):
         if self.multi_link_current_size == self.multi_link_total_size:
